@@ -7,14 +7,16 @@ import {
   IconFileAi,
   IconFileDescription,
   IconFileWord,
-  IconFolder,
+  IconCreditCardPay,
   IconHelp,
-  IconListDetails,
   IconReport,
   IconSearch,
   IconSettings,
   IconUsers,
-  IconCookie
+  IconCookie,
+  IconShoppingCart,
+  IconAssembly,
+  IconTruckReturn
 } from "@tabler/icons-react"
 
 import { NavDocuments } from "@/components/nav-documents"
@@ -40,28 +42,33 @@ const data = {
   navMain: [
     {
       title: "Dashboard",
-      url: "/dashboard",
+      url: "/dashboard/main",
       icon: IconDashboard,
     },
     {
-      title: "Lifecycle",
-      url: "/dashboard/data",
-      icon: IconListDetails,
+      title: "Transactions",
+      url: "/dashboard/transactions",
+      icon: IconCreditCardPay,
     },
     {
-      title: "Analytics",
-      url: "#",
-      icon: IconChartBar,
+      title: "Orders",
+      url: "/dashboard/orders",
+      icon: IconShoppingCart,
     },
     {
-      title: "Projects",
-      url: "#",
-      icon: IconFolder,
+      title: "Products",
+      url: "/dashboard/products",
+      icon: IconAssembly,
     },
     {
-      title: "Team",
-      url: "#",
+      title: "Clients",
+      url: "/dashboard/clients",
       icon: IconUsers,
+    },
+    {
+      title: "Returns",
+      url: "/dashboard/returns",
+      icon: IconTruckReturn,
     },
   ],
   navClouds: [

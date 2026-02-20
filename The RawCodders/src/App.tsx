@@ -6,14 +6,26 @@ import {
 } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useState } from "react";
-import Dashboard from "./components/dashboard/Dashboard";
+import MainLayout from "./MainLayout";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import DashboardExample from "./components/dashboard/DashboardExample";
 
 export default function App() {
   return (
     <>
       <main className="flex flex-col gap-16">
         <Authenticated>
-          <Dashboard/>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<MainLayout /> }>
+                <Route path="dashboard">
+                  <Route index element={<DashboardExample />} />
+                  <Route path="data" element={<DashboardExample />} />
+                  
+                </Route>
+              </Route>
+            </Routes>
+          </BrowserRouter>
         </Authenticated>
         <Unauthenticated>
           <SignInForm />

@@ -16,13 +16,24 @@ export default defineSchema({
   clients: defineTable({
     name: v.string(),
     email: v.string(),
-    phone: v.number()
+    phone: v.number(),
+    birthDate: v.string(),
+    sex: v.string(),
+    address: v.object({
+      line1: v.string(),
+      line2: v.string(),
+      postCode: v.string(),
+      city: v.string(),
+      country: v.string(),
+    })
   }).index("by_email", ["email"]),
 
   transactions: defineTable({
     clientId: v.id("clients"),
     status: v.string(),
     totalPrice: v.float64(),
+    discount: v.number(),
+    orderId: v.array(v.id("orders"))
   }).index("by_clientId", ["clientId"]),
 
   orders: defineTable({
@@ -36,5 +47,7 @@ export default defineSchema({
   returns: defineTable({
     orderId: v.id("orders"),
     reason: v.string(),
+    description: v.string()
   }).index("by_orderId", ["orderId"]),
+  
 });

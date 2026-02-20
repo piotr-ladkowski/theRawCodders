@@ -25,7 +25,8 @@
     /* Import paths */
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "baseUrl": ".",
   },
   "include": ["src"]
 }

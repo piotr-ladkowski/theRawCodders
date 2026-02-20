@@ -9,6 +9,11 @@ import { useState } from "react";
 import MainLayout from "./MainLayout";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import DashboardExample from "./components/dashboard/DashboardExample";
+import Orders from "./components/orders/Orders";
+import Transactions from "./components/transactions/Transactions";
+import Products from "./components/products/Products";
+import Clients from "./components/clients/Clients";
+import Returns from "./components/returns/Returns";
 
 const inputClass =
   "bg-light dark:bg-dark text-dark dark:text-light rounded-md p-2 border-2 border-slate-200 dark:border-slate-800";
@@ -24,8 +29,12 @@ export default function App() {
             <Routes>
               <Route path="/" element={<MainLayout /> }>
                 <Route path="dashboard">
-                  <Route index element={<DashboardExample />} />
-                  <Route path="data" element={<DashboardExample />} />
+                  <Route path="main" element={<DashboardExample />} />
+                  <Route path="transactions" element={<Transactions />} />
+                  <Route path="orders" element={<Orders/>} />
+                  <Route path="products" element={<Products />} />
+                  <Route path="clients" element={<Clients />} />
+                  <Route path="returns" element={<Returns />} />
                   
                 </Route>
               </Route>

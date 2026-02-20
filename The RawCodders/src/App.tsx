@@ -6,12 +6,12 @@ import {
 } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useState } from "react";
-import Dashboard from "./app/dashboard/Dashboard";
+import Dashboard from "./components/dashboard/Dashboard";
 
 export default function App() {
   return (
     <>
-      <main className="dark flex flex-col gap-16">
+      <main className="flex flex-col gap-16">
         <Authenticated>
           <Dashboard/>
         </Authenticated>

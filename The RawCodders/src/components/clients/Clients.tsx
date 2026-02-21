@@ -1,8 +1,15 @@
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-
+import { columns } from "@/components/clients/ClientList/columns"
+import { DataTable } from "@/components/clients/ClientList/data-table"
+import { ClientModal } from "./ClientList/client-modal";
+import { useState } from "react";
+import { TClient } from "./ClientList/columns";
+import { ClientsProvider } from "./ClientList/clients-context";
 export default function Clients() {
   const clients = useQuery(api.clients.listClients);
+  const [selectedClient, setSelectedClient] = useState<TClient>();
+  const [editClientModalState, setEditClientModalState] = useState<boolean>(false);
 
   if (clients === undefined) {
     return <div>Loading...</div>;
@@ -10,14 +17,15 @@ export default function Clients() {
 
   return (
     <div>
-      <h2>Clients De Mierda</h2>
-      <ul>
-        {clients.map((client) => (
-          <li key={client._id}>
-            {client.name} — {client.email}
-          </li>
-        ))}
-      </ul>
+        <div className="container mx-auto px-6 py-3">
+          <ClientsProvider value={{ selectedClient, setSelectedClient, editClientModalState, setEditClientModalState }}>
+            <div className="text-2xl flex gap-4 items-center font-bold mb-3">
+                <div>Clients</div>
+                <ClientModal />
+              </div>
+            <DataTable columns={columns} data={clients} />
+          </ClientsProvider>
+        </div>
     </div>
   );
 }

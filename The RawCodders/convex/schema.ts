@@ -16,7 +16,7 @@ export default defineSchema({
   clients: defineTable({
     name: v.string(),
     email: v.string(),
-    phone: v.number(),
+    phone: v.string(),
     birthDate: v.string(),
     sex: v.string(),
     address: v.object({
@@ -26,7 +26,8 @@ export default defineSchema({
       city: v.string(),
       country: v.string(),
     })
-  }).index("by_email", ["email"]),
+  }).index("by_email", ["email"])
+    .index("by_name", ["name"]),
 
   transactions: defineTable({
     clientId: v.id("clients"),

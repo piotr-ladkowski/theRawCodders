@@ -1,23 +1,25 @@
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-
+import { columns } from "@/components/clients/ClientList/columns"
+import { DataTable } from "@/components/clients/ClientList/data-table"
+import { ClientModal } from "./ClientList/client-modal";
 export default function Clients() {
   const clients = useQuery(api.clients.listClients);
-
   if (clients === undefined) {
     return <div>Loading...</div>;
   }
 
+
   return (
     <div>
-      <h2>Clients De Mierda</h2>
-      <ul>
-        {clients.map((client) => (
-          <li key={client._id}>
-            {client.name} — {client.email}
-          </li>
-        ))}
-      </ul>
+
+        <div className="container mx-auto px-6 py-3">
+          <div className="text-2xl flex gap-4 items-center font-bold mb-3">
+              <div>Clients</div>
+              <ClientModal clientData={clients[0]}/>
+            </div>
+          <DataTable columns={columns} data={clients} />
+        </div>
     </div>
   );
 }

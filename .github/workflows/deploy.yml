@@ -17,6 +17,6 @@ jobs:
           git pull origin main
           cd "/opt/the_rawcodders/The RawCodders"
           sudo docker compose -f "/opt/the_rawcodders/The RawCodders/docker-compose.yml" down
-          docker compose build
-          docker compose run --rm convex-deploy
+          sudo docker compose build
+          sudo docker compose run --rm convex-deploy
           sudo docker compose -f "/opt/the_rawcodders/The RawCodders/docker-compose.yml" up -d --build

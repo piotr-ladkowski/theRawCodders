@@ -2,6 +2,8 @@ services:
   backend:
     # Change this to :${REV} if you want to pin to a specific version
     image: ghcr.io/get-convex/convex-backend:latest
+    env_file:
+      - .env.local
     stop_grace_period: 10s
     stop_signal: SIGINT
     ports:
@@ -52,6 +54,8 @@ services:
 
   convex-deploy:
     image: node:24-alpine
+    env_file:
+      - .env.local
     working_dir: /app
     volumes:
       - .:/app
@@ -64,6 +68,8 @@ services:
   dashboard:
     # Change this to :${REV} if you want to pin to a specific version
     image: ghcr.io/get-convex/convex-dashboard:latest
+    env_file:
+      - .env.local
     stop_grace_period: 10s
     stop_signal: SIGINT
     ports:
@@ -80,7 +86,9 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
       args:
-        - VITE_CONVEX_URL=${VITE_CONVEX_URL:-http://majkrafty.ddns.net:${PORT:-3210}}
+        - VITE_CONVEX_URL=${VITE_CONVEX_URL}
+    env_file:
+      - .env.local
     ports:
       - "${FRONTEND_PORT:-5173}:80"
     depends_on:

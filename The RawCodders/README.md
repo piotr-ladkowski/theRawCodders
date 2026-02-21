@@ -37,6 +37,28 @@ To learn more about developing your project with Convex, check out:
 - The rest of [Convex docs](https://docs.convex.dev/) to learn about all Convex features.
 - [Stack](https://stack.convex.dev/) for in-depth articles on advanced topics.
 
+## Run with Docker Compose
+
+You can run Convex backend, Convex dashboard, and the Vite frontend together:
+
+```bash
+docker compose up --build
+```
+
+Optional environment variables:
+
+- `PORT` (default: `3210`) - Convex backend port
+- `SITE_PROXY_PORT` (default: `3211`) - Convex site proxy port
+- `DASHBOARD_PORT` (default: `6791`) - Convex dashboard port
+- `FRONTEND_PORT` (default: `5173`) - React app port
+- `VITE_CONVEX_URL` (default: `http://127.0.0.1:${PORT}`) - URL compiled into the Vite frontend
+
+After startup:
+
+- Frontend: `http://127.0.0.1:${FRONTEND_PORT:-5173}`
+- Backend: `http://127.0.0.1:${PORT:-3210}`
+- Dashboard: `http://127.0.0.1:${DASHBOARD_PORT:-6791}`
+
 ## Join the community
 
 Join thousands of developers building full-stack apps with Convex:

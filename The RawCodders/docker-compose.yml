@@ -2,6 +2,8 @@ services:
   backend:
     # Change this to :${REV} if you want to pin to a specific version
     image: ghcr.io/get-convex/convex-backend:latest
+    env_file:
+      - .env.local
     stop_grace_period: 10s
     stop_signal: SIGINT
     ports:
@@ -22,9 +24,9 @@ services:
       - AWS_S3_FORCE_PATH_STYLE
       - AWS_SECRET_ACCESS_KEY
       - AWS_SESSION_TOKEN
-      - CONVEX_CLOUD_ORIGIN=${CONVEX_CLOUD_ORIGIN:-http://therawcodders-backend-1:${PORT:-3210}}
+      - CONVEX_CLOUD_ORIGIN=${CONVEX_CLOUD_ORIGIN:-http://${VITE_CONVEX_URL}:${PORT:-3210}}
       - CONVEX_RELEASE_VERSION_DEV
-      - CONVEX_SITE_ORIGIN=${CONVEX_SITE_ORIGIN:-http://therawcodders-backend-1:${SITE_PROXY_PORT:-3211}}
+      - CONVEX_SITE_ORIGIN=${CONVEX_SITE_ORIGIN:-http://${VITE_CONVEX_SITE_URL}:${SITE_PROXY_PORT:-3211}}
       - DATABASE_URL
       - DISABLE_BEACON
       - DOCUMENT_RETENTION_DELAY=${DOCUMENT_RETENTION_DELAY:-172800} # Lower default document retention to 2 days
@@ -49,16 +51,45 @@ services:
       interval: 5s
       start_period: 10s
 
+
+  convex-deploy:
+    image: node:24-alpine
+    env_file:
+      - .env.local
+    working_dir: /app
+    volumes:
+      - .:/app
+    depends_on:
+      backend:
+        condition: service_healthy
+    command: sh -lc "npm ci && npx convex deploy --yes --url $$CONVEX_SELF_HOSTED_URL --admin-key $$CONVEX_SELF_HOSTED_ADMIN_KEY"
+
   dashboard:
     # Change this to :${REV} if you want to pin to a specific version
     image: ghcr.io/get-convex/convex-dashboard:latest
+    env_file:
+      - .env.local
     stop_grace_period: 10s
     stop_signal: SIGINT
     ports:
       - "${DASHBOARD_PORT:-6791}:6791"
     environment:
-      - NEXT_PUBLIC_DEPLOYMENT_URL=${NEXT_PUBLIC_DEPLOYMENT_URL:-http://127.0.0.1:${PORT:-3210}}
+      - NEXT_PUBLIC_DEPLOYMENT_URL=${NEXT_PUBLIC_DEPLOYMENT_URL:-http://majkrafty.ddns.net:${PORT:-3210}}
       - NEXT_PUBLIC_LOAD_MONACO_INTERNALLY
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        - VITE_CONVEX_URL=${VITE_CONVEX_URL}
+    env_file:
+      - .env.local
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
     depends_on:
       backend:
         condition: service_healthy

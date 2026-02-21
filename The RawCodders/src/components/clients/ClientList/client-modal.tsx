@@ -17,6 +17,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useState } from "react"
+import { ChevronDownIcon } from "lucide-react"
+import { format } from "date-fns"
+
 
 export function ClientModal({clientData}: {clientData?: TClient}) {
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -65,19 +68,22 @@ export function ClientModal({clientData}: {clientData?: TClient}) {
             </Field>
 
             <Popover>
-              <PopoverTrigger>
-                <Field>
-                  <Label htmlFor="phone-1">Birthdate</Label>
-                  <Input disabled id="phone-1" value={date?.toISOString()} name="phone" />
-                </Field>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  data-empty={!date}
+                  className="data-[empty=true]:text-muted-foreground w-[212px] justify-between text-left font-normal"
+                >
+                  {date ? format(date, "PPP") : <span>Pick a date</span>}
+                  <ChevronDownIcon />
+                </Button>
               </PopoverTrigger>
-              <PopoverContent>
+              <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
                   selected={date}
                   onSelect={setDate}
-                  className="rounded-lg border"
-                  captionLayout="dropdown"
+                  defaultMonth={date}
                 />
               </PopoverContent>
             </Popover>

@@ -13,10 +13,16 @@ jobs:
 
       - name: Build & run
         run: |
+          set -euo pipefail
           cd /opt/the_rawcodders
           git pull origin main
           cd "/opt/the_rawcodders/The RawCodders"
-          sudo docker compose -f "/opt/the_rawcodders/The RawCodders/docker-compose.yml" down
-          sudo docker compose build
-          sudo docker compose run --rm convex-deploy
-          sudo docker compose -f "/opt/the_rawcodders/The RawCodders/docker-compose.yml" up -d --build
+
+          sudo docker compose --env-file .env.local -f docker-compose.yml down --remove-orphans
+          sudo docker compose --env-file .env.local -f docker-compose.yml build
+
+          # bring backend up and wait until healthy before deploying convex functions
+          sudo docker compose --env-file .env.local -f docker-compose.yml up -d --wait backend
+
+          sudo docker compose --env-file .env.local -f docker-compose.yml run --rm convex-deploy
+          sudo docker compose --env-file .env.local -f docker-compose.yml up -d --build 

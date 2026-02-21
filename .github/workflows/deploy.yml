@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build & run
+      - name: Build, sync Convex env, deploy, run
         run: |
           set -euo pipefail
           cd /opt/the_rawcodders
@@ -24,5 +24,96 @@ jobs:
           # start backend first and wait for healthcheck
           sudo docker compose --env-file .env.local -f docker-compose.yml up -d --wait backend
 
+          # ---- sync Convex deployment env vars from .env.local (handles PEM safely) ----
+          sudo docker compose --env-file .env.local -f docker-compose.yml run --rm convex-deploy sh -lc '
+          set -euo pipefail
+
+          node - <<'"'"'NODE'"'"'
+          const fs = require("fs");
+
+          function parseEnv(path) {
+            const txt = fs.readFileSync(path, "utf8");
+            const out = {};
+            let i = 0;
+
+            while (i < txt.length) {
+              // skip newlines
+              while (i < txt.length && (txt[i] === "\n" || txt[i] === "\r")) i++;
+              if (i >= txt.length) break;
+
+              // comments
+              if (txt[i] === "#") { while (i < txt.length && txt[i] !== "\n") i++; continue; }
+
+              // key
+              let key = "";
+              while (i < txt.length && /[A-Za-z0-9_]/.test(txt[i])) key += txt[i++];
+              while (i < txt.length && (txt[i] === " " || txt[i] === "\t")) i++;
+
+              if (txt[i] !== "=") { while (i < txt.length && txt[i] !== "\n") i++; continue; }
+              i++; // '='
+              while (i < txt.length && (txt[i] === " " || txt[i] === "\t")) i++;
+
+              // value (supports "multi line" until closing quote)
+              let val = "";
+              if (txt[i] === "\"") {
+                i++;
+                while (i < txt.length) {
+                  if (txt[i] === "\"" && txt[i - 1] !== "\\") { i++; break; }
+                  val += txt[i++];
+                }
+              } else {
+                while (i < txt.length && txt[i] !== "\n" && txt[i] !== "\r") val += txt[i++];
+                val = val.trim();
+              }
+
+              if (key) out[key] = val;
+              while (i < txt.length && txt[i] !== "\n") i++;
+            }
+
+            return out;
+          }
+
+          (async () => {
+            const env = parseEnv("/app/.env.local");
+            const base = process.env.CONVEX_SELF_HOSTED_URL;          // e.g. http://backend:3210
+            const adminKey = process.env.CONVEX_SELF_HOSTED_ADMIN_KEY;
+
+            for (const k of ["SITE_URL", "JWT_PRIVATE_KEY", "JWKS"]) {
+              if (!env[k] || env[k].length === 0) throw new Error(`Missing ${k} in .env.local`);
+            }
+            if (!base) throw new Error("Missing CONVEX_SELF_HOSTED_URL");
+            if (!adminKey) throw new Error("Missing CONVEX_SELF_HOSTED_ADMIN_KEY");
+
+            const res = await fetch(`${base}/api/v1/update_environment_variables`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Convex ${adminKey}`,
+              },
+              body: JSON.stringify({
+                changes: [
+                  { name: "SITE_URL", value: env.SITE_URL },
+                  { name: "JWT_PRIVATE_KEY", value: env.JWT_PRIVATE_KEY },
+                  { name: "JWKS", value: env.JWKS },
+                ],
+              }),
+            });
+
+            const text = await res.text();
+            if (!res.ok) {
+              console.error("Failed:", res.status, text);
+              process.exit(1);
+            }
+            console.log("✅ Convex env vars synced (SITE_URL, JWT_PRIVATE_KEY, JWKS).");
+          })().catch((e) => {
+            console.error(e);
+            process.exit(1);
+          });
+          NODE
+          '
+
+          # deploy convex functions
           sudo docker compose --env-file .env.local -f docker-compose.yml run --rm convex-deploy
+
+          # bring everything up
           sudo docker compose --env-file .env.local -f docker-compose.yml up -d --build

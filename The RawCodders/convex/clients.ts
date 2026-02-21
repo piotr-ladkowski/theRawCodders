@@ -33,13 +33,25 @@ export const insertClient = mutation({
     args: {
         name: v.string(),
         email: v.string(),
-        phone: v.number()
+        phone: v.number(),
+        birthDate: v.string(),
+        sex: v.string(),
+        address: v.object({
+            line1: v.string(),
+            line2: v.string(),
+            postCode: v.string(),
+            city: v.string(),
+            country: v.string(),
+        })
     },
     handler: async (ctx, args) => {
         return await ctx.db.insert("clients", {
             name: args.name,
             email: args.email,
-            phone: args.phone
+            phone: args.phone,
+            birthDate: args.birthDate,
+            sex: args.sex,
+            address: args.address
         });
     },
 });

@@ -33,11 +33,13 @@ export const insertReturn = mutation({
     args: {
         orderId: v.id("orders"),
         reason: v.string(),
+        description: v.string()
     },
     handler: async (ctx, args) => {
         return await ctx.db.insert("returns", {
             orderId: args.orderId,
             reason: args.reason,
+            description: args.description
         });
     },
 });

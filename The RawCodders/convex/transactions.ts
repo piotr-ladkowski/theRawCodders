@@ -33,6 +33,8 @@ export const insertTransaction = mutation({
     args: {
         clientId: v.id("clients"),
         status: v.string(),
+        discount: v.number(),
+        orderId: v.array(v.id("orders"))
     },
     handler: async (ctx, args) => {
         // total price to be calculated
@@ -42,6 +44,8 @@ export const insertTransaction = mutation({
             clientId: args.clientId,
             status: args.status,
             totalPrice: totalPrice,
+            discount: args.discount,
+            orderId: args.orderId
         });
     },
 });

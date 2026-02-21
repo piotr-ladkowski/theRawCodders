@@ -3,22 +3,28 @@ import { api } from "../../../convex/_generated/api";
 import { columns } from "@/components/clients/ClientList/columns"
 import { DataTable } from "@/components/clients/ClientList/data-table"
 import { ClientModal } from "./ClientList/client-modal";
+import { useState } from "react";
+import { TClient } from "./ClientList/columns";
+import { ClientsProvider } from "./ClientList/clients-context";
 export default function Clients() {
   const clients = useQuery(api.clients.listClients);
+  const [selectedClient, setSelectedClient] = useState<TClient>();
+  const [editClientModalState, setEditClientModalState] = useState<boolean>(false);
+
   if (clients === undefined) {
     return <div>Loading...</div>;
   }
 
-
   return (
     <div>
-
         <div className="container mx-auto px-6 py-3">
-          <div className="text-2xl flex gap-4 items-center font-bold mb-3">
-              <div>Clients</div>
-              <ClientModal />
-            </div>
-          <DataTable columns={columns} data={clients} />
+          <ClientsProvider value={{ selectedClient, setSelectedClient, editClientModalState, setEditClientModalState }}>
+            <div className="text-2xl flex gap-4 items-center font-bold mb-3">
+                <div>Clients</div>
+                <ClientModal />
+              </div>
+            <DataTable columns={columns} data={clients} />
+          </ClientsProvider>
         </div>
     </div>
   );

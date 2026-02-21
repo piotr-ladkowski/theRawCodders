@@ -1,6 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
+import type { Id } from "../../../../convex/_generated/dataModel"
 
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
@@ -14,7 +15,7 @@ type TAddress = {
 }
 
 export type TClient = {
-  _id: string
+  _id: Id<"clients">
   address: TAddress
   birthDate: string
   name: string
@@ -45,6 +46,7 @@ export const columns: ColumnDef<TClient>[] = [
     header: "Address"
   },
   {
+    accessorKey: "action",
     header: "Actions"
   }
 ]

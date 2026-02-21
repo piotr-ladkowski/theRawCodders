@@ -24,7 +24,21 @@ import {
 
 import { Button } from "@/components/ui/button"
 
-import { IconAddressBook } from "@tabler/icons-react"
+import { IconAddressBook, IconDotsVertical } from "@tabler/icons-react"
+
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { useClientsContext } from "./clients-context"
+import type { TClient } from "./columns"
+
+import { api } from "../../../../convex/_generated/api"
+import { useMutation } from "convex/react"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -35,25 +49,53 @@ export function DataTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
+  const { setSelectedClient, setEditClientModalState } = useClientsContext()
+  const deleteClientMutation = useMutation(api.clients.deleteClient)
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
   })
 
-  function RenderObject(object: object) {
+  function ActionMenu({obj}: {obj: TClient}) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost">
+            <IconDotsVertical className="text-white"/>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuGroup>
+            <DropdownMenuItem onClick={() => { setSelectedClient(obj); setEditClientModalState(true);}}>
+                Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() =>{void deleteClientMutation({ clientId: obj._id })}}
+              className="hover:!bg-red-400"
+            >
+                Delete
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
+
+  }
+
+
+  function RenderObject(object: object, accessorKey: string, client: TClient) {
     const obj = object as Record<string, any>;
+
     
     // Check if this is an address object
-    const isAddress = 'line1' in obj && 'line2' in obj && 'postCode' in obj && 'city' in obj && 'country' in obj;
-    
-    if (isAddress) {
+    if (accessorKey === "address") {
       return (
         <HoverCard openDelay={10} closeDelay={100}>
           <HoverCardTrigger asChild>
-            <Button variant="ghost"><IconAddressBook/></Button>
+            <Button variant="ghost"><IconAddressBook /></Button>
           </HoverCardTrigger>
-          <HoverCardContent className="w-32">
+          <HoverCardContent side="left" className="w-48">
             <div className="text-sm space-y-1">
               <div>{obj.line1}</div>
               <div>{obj.line2}</div>
@@ -64,8 +106,15 @@ export function DataTable<TData, TValue>({
         </HoverCard>
       );
     }
+    else if(accessorKey === "action")  {
+      return (
+       <ActionMenu obj={client} />
+      )
+    }
     
   }
+
+
 
 
 
@@ -97,13 +146,18 @@ export function DataTable<TData, TValue>({
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
               >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {typeof cell.getValue() === 'object' && cell.getValue() !== null
-                      ? RenderObject(cell.getValue() as object)
-                      : flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
+                {row.getVisibleCells().map((cell) => {
+                  const accessorKey = cell.column.id
+
+                  return (
+                    <TableCell key={cell.id}>
+                      {cell.getValue() !== null && (accessorKey === "action" || accessorKey === "address")
+                        ?  RenderObject(cell.getValue() as object, accessorKey, row.original as TClient)
+                        : flexRender(cell.column.columnDef.cell, cell.getContext()) 
+                       }
+                    </TableCell>
+                  )
+                })}
               </TableRow>
             ))
           ) : (

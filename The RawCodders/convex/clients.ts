@@ -29,6 +29,18 @@ export const getClientByEmail = query({
     },
 });
 
+export const getClientByName = query({
+    args: {
+        name: v.string(),
+    },
+    handler: async (ctx, args) => {
+        return await ctx.db
+            .query("clients")
+            .withIndex("by_name", (q) => q.eq("name", args.name))
+            .unique();
+    },
+});
+
 export const insertClient = mutation({
     args: {
         name: v.string(),
@@ -61,6 +73,16 @@ export const updateClient = mutation({
         clientId: v.id("clients"),
         name: v.optional(v.string()),
         email: v.optional(v.string()),
+        phone: v.optional(v.string()),
+        birthDate: v.optional(v.string()),
+        sex: v.optional(v.string()),
+        address: v.optional(v.object({
+            line1: v.string(),
+            line2: v.string(),
+            postCode: v.string(),
+            city: v.string(),
+            country: v.string(),
+        }))
     },
     handler: async (ctx, args) => {
         const { clientId, ...fields } = args;

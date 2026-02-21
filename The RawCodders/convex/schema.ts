@@ -26,7 +26,8 @@ export default defineSchema({
       city: v.string(),
       country: v.string(),
     })
-  }).index("by_email", ["email"]),
+  }).index("by_email", ["email"])
+    .index("by_name", ["name"]),
 
   transactions: defineTable({
     clientId: v.id("clients"),

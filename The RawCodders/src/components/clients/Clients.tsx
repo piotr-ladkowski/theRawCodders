@@ -16,7 +16,7 @@ export default function Clients() {
         <div className="container mx-auto px-6 py-3">
           <div className="text-2xl flex gap-4 items-center font-bold mb-3">
               <div>Clients</div>
-              <ClientModal clientData={clients[0]}/>
+              <ClientModal />
             </div>
           <DataTable columns={columns} data={clients} />
         </div>

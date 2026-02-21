@@ -13,7 +13,8 @@ jobs:
 
       - name: Build & run
         run: |
-          cd /opt/convex-app
+          cd /opt/the_rawcodders
           git pull origin main
+          cd 'The Rawcodders'
           docker compose down
           docker compose up -d --build

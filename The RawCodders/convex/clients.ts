@@ -33,7 +33,7 @@ export const insertClient = mutation({
     args: {
         name: v.string(),
         email: v.string(),
-        phone: v.number(),
+        phone: v.string(),
         birthDate: v.string(),
         sex: v.string(),
         address: v.object({

@@ -16,7 +16,7 @@ export default defineSchema({
   clients: defineTable({
     name: v.string(),
     email: v.string(),
-    phone: v.number(),
+    phone: v.string(),
     birthDate: v.string(),
     sex: v.string(),
     address: v.object({

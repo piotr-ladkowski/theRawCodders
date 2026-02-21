@@ -21,8 +21,8 @@ jobs:
           sudo docker compose --env-file .env.local -f docker-compose.yml down --remove-orphans
           sudo docker compose --env-file .env.local -f docker-compose.yml build
 
-          # bring backend up and wait until healthy before deploying convex functions
+          # start backend first and wait for healthcheck
           sudo docker compose --env-file .env.local -f docker-compose.yml up -d --wait backend
 
           sudo docker compose --env-file .env.local -f docker-compose.yml run --rm convex-deploy
-          sudo docker compose --env-file .env.local -f docker-compose.yml up -d --build 
+          sudo docker compose --env-file .env.local -f docker-compose.yml up -d --build

@@ -63,5 +63,17 @@ services:
       backend:
         condition: service_healthy
 
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        - VITE_CONVEX_URL=${VITE_CONVEX_URL:-http://127.0.0.1:${PORT:-3210}}
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
 volumes:
   data:

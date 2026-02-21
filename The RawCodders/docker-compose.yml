@@ -49,6 +49,18 @@ services:
       interval: 5s
       start_period: 10s
 
+
+  convex-deploy:
+    image: node:24-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: sh -c "npm ci && npx convex deploy"
+    environment:
+      - CONVEX_DEPLOYMENT_URL=http://majkrafty.ddns.net
+      - CONVEX_DEPLOY_KEY=http://majkrafty.ddns.net
+
+
   dashboard:
     # Change this to :${REV} if you want to pin to a specific version
     image: ghcr.io/get-convex/convex-dashboard:latest

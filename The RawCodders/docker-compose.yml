@@ -60,10 +60,6 @@ services:
     volumes:
       - .:/app
     command: sh -c "npm ci && npx convex deploy"
-    environment:
-      - CONVEX_DEPLOYMENT_URL=http://majkrafty.ddns.net
-      - CONVEX_DEPLOY_KEY=http://majkrafty.ddns.net
-
 
   dashboard:
     # Change this to :${REV} if you want to pin to a specific version

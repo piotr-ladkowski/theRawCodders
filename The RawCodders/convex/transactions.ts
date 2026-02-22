@@ -54,7 +54,7 @@ export const updateTransaction = mutation({
     args: {
         transactionId: v.id("transactions"),
         clientId: v.id("clients"),
-        status: v.string(),
+        status: v.TransactionStatus,
         discount: v.float64(),
     },
     handler: async (ctx, args) => {

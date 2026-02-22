@@ -49,6 +49,8 @@ import { api } from "../../../../convex/_generated/api"
 import { useMutation } from "convex/react"
 import { useState } from "react"
 
+import { useQuery } from "convex/react"
+
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]

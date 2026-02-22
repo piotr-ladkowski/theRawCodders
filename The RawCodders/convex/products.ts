@@ -67,3 +67,12 @@ export const getProduct = query({
     },
 
 })
+
+export const deleteOrder = mutation({
+    args: {
+        productId: v.id("products"),
+    },
+    handler: async (ctx, args) => {
+        await ctx.db.delete(args.productId);
+    },
+});

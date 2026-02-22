@@ -11,9 +11,14 @@ import {
 import { Field, FieldGroup } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { IconPlus } from "@tabler/icons-react";
-import { useEffect, useRef } from "react"
-import { useMutation } from "convex/react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { IconPlus, IconChevronDown, IconCheck } from "@tabler/icons-react";
+import { useEffect, useRef, useState } from "react"
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { useOrdersContext } from "./orders-context";
 import { Id } from "../../../../convex/_generated/dataModel";
@@ -25,12 +30,34 @@ export function OrderModal() {
   const createOrder = useMutation(api.orders.insertOrder);
   const updateOrder = useMutation(api.orders.updateOrder);
   const createTransaction = useMutation(api.transactions.insertTransaction);
+  
+  // Fetch products to populate the dropdown
+  const products = useQuery(api.products.listProducts);
+
+  // Combobox State
+  const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedProductId, setSelectedProductId] = useState<Id<"products"> | undefined>(undefined);
+
+  // Pre-fill selected product when editing an existing order
+  useEffect(() => {
+    if (selectedOrder?.productId) {
+      setSelectedProductId(selectedOrder.productId as Id<"products">);
+    } else {
+      setSelectedProductId(undefined);
+    }
+    setSearchQuery(""); // Clear search on open/close
+  }, [selectedOrder, editOrderModalState]);
+
+  // Filter products based on search input
+  const filteredProducts = products?.filter((product) =>
+    product.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   function scheduleClearSelectedOrder() {
     if (clearSelectedTimeoutRef.current !== null) {
       window.clearTimeout(clearSelectedTimeoutRef.current);
     }
-    // Delay to allow the close animation to finish.
     clearSelectedTimeoutRef.current = window.setTimeout(() => {
       setSelectedOrder(undefined);
     }, 200);
@@ -48,9 +75,13 @@ export function OrderModal() {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
 
+    if (!selectedProductId) {
+      console.error("Please select a product");
+      return;
+    }
 
     const commonData = {
-      productId: formData.get("productId") as Id<"products">,
+      productId: selectedProductId, // Grab directly from state instead of formData
       quantity: Number(formData.get("quantity"))
     };
 
@@ -61,7 +92,6 @@ export function OrderModal() {
           ...commonData,
         });
       } else {
-
         const newTransactionId = await createTransaction({
           clientId: "jx7547q51txvpssfavt9bvtwvn81kh59" as Id<"clients">, //TODO
           status: "ordered", // Default status
@@ -74,7 +104,7 @@ export function OrderModal() {
           transactionId: newTransactionId 
         });
       }
-      setEditOrderModalState(false); // Close the modal on success
+      setEditOrderModalState(false); 
       scheduleClearSelectedOrder();
     } catch (error) {
       console.error("Submission failed:", error);
@@ -89,7 +119,6 @@ export function OrderModal() {
         if (!open) {
           scheduleClearSelectedOrder();
         }
-        
       }}
     >
         <DialogTrigger asChild>
@@ -104,12 +133,65 @@ export function OrderModal() {
             </DialogHeader>
             <FieldGroup>
               <Field>
-                <Label htmlFor="productId-1">Product Id</Label>
-                <Input id="productId-1" name="productId" defaultValue={selectedOrder?.productId} />
+                <Label htmlFor="productId-1">Product</Label>
+                <Popover open={open} onOpenChange={setOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="productId-1"
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={open}
+                      className="w-full justify-between font-normal"
+                    >
+                      {selectedProductId && products
+                        ? products.find((p) => p._id === selectedProductId)?.name
+                        : "Select a product..."}
+                      <IconChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  {/* Matches the width of the trigger button */}
+                  <PopoverContent 
+                    className="p-0" 
+                    style={{ width: "var(--radix-popover-trigger-width)" }} 
+                    align="start"
+                  >
+                    <div className="p-2 border-b">
+                      <Input 
+                        placeholder="Search product..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="h-8 border-none focus-visible:ring-0 shadow-none outline-none"
+                      />
+                    </div>
+                    <div className="max-h-60 overflow-y-auto p-1">
+                      {products === undefined ? (
+                        <p className="p-2 text-sm text-center text-muted-foreground">Loading products...</p>
+                      ) : filteredProducts?.length === 0 ? (
+                        <p className="p-2 text-sm text-center text-muted-foreground">No products found.</p>
+                      ) : (
+                        filteredProducts?.map((product) => (
+                          <div
+                            key={product._id}
+                            className={`flex cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground ${
+                              selectedProductId === product._id ? "bg-accent text-accent-foreground" : ""
+                            }`}
+                            onClick={() => {
+                              setSelectedProductId(product._id);
+                              setOpen(false); // Close dropdown after selection
+                            }}
+                          >
+                            <span>{product.name}</span>
+                            {selectedProductId === product._id && <IconCheck className="h-4 w-4" />}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </Field>
               <Field>
                 <Label htmlFor="quantity-1">Quantity</Label>
-                <Input id="quantity-1" name="quantity" defaultValue={selectedOrder?.quantity}/>
+                <Input id="quantity-1" name="quantity" type="number" defaultValue={selectedOrder?.quantity} required/>
               </Field>
             </FieldGroup>
             <DialogFooter className="mt-4">

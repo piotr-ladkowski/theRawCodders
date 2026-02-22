@@ -50,6 +50,23 @@ export const insertTransaction = mutation({
     },
 });
 
+export const updateTransaction = mutation({
+    args: {
+        transactionId: v.id("transactions"),
+        clientId: v.id("clients"),
+        status: v.string(),
+        discount: v.float64(),
+    },
+    handler: async (ctx, args) => {
+        await ctx.db.patch(args.transactionId, { 
+            clientId: args.clientId,
+            status: args.status, 
+            discount: args.discount 
+        });
+        return args.transactionId;
+    },
+});
+
 export const updateTransactionStatus = mutation({
     args: {
         transactionId: v.id("transactions"),
@@ -57,6 +74,47 @@ export const updateTransactionStatus = mutation({
     },
     handler: async (ctx, args) => {
         await ctx.db.patch(args.transactionId, { status: args.status });
+        return args.transactionId;
+    },
+});
+
+export const addOrderToTransaction = mutation({
+    args: {
+        transactionId: v.id("transactions"),
+        orderId: v.id("orders"),
+    },
+    handler: async (ctx, args) => {
+        const transaction = await ctx.db.get(args.transactionId);
+        if (!transaction) {
+            throw new Error("Transaction not found");
+        }
+
+        const order = await ctx.db.get(args.orderId);
+        if (!order) {
+            throw new Error("Order not found");
+        }
+
+        if (transaction.orderId.includes(args.orderId)) {
+            return args.transactionId;
+        }
+
+        const product = await ctx.db.get(order.productId);
+        if (!product) {
+            throw new Error("Product not found");
+        }
+
+        const orderTotal = product.price * order.quantity;
+        const newOrderIds = [...transaction.orderId, args.orderId];
+        
+        await ctx.db.patch(args.transactionId, {
+            orderId: newOrderIds,
+            totalPrice: transaction.totalPrice + orderTotal
+        });
+
+        if (order.transactionId !== args.transactionId) {
+            await ctx.db.patch(args.orderId, { transactionId: args.transactionId });
+        }
+
         return args.transactionId;
     },
 });

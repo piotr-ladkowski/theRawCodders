@@ -11,6 +11,13 @@ import {
 import { Field, FieldGroup } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { IconPlus } from "@tabler/icons-react";
 import { useEffect, useRef } from "react"
 import { useMutation } from "convex/react";
@@ -47,12 +54,12 @@ export function ReturnModal() {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
 
-    const reason = formData.get("reason") as string;
+    // Rzutowanie na poprawny typ unii
+    const reason = formData.get("reason") as "Product not received" | "Discrepancy with the description" | "Faulty product" | "Other";
     const description = formData.get("description") as string;
 
     try {
       if (selectedReturn?._id) {
-
         await updateReturn({
           returnId: selectedReturn._id,
           reason: reason,
@@ -60,8 +67,7 @@ export function ReturnModal() {
         });
       } else {
         const orderId = formData.get("orderId") as Id<"orders">;
-        const description = formData.get("description") as string;
-
+        
         await createReturn({
           orderId,
           reason,
@@ -102,16 +108,27 @@ export function ReturnModal() {
                    <Input id="orderId" name="orderId" placeholder="Insert Order ID..." required />
                  </Field>
               )}
+              
               <Field>
                 <Label htmlFor="reason">Reason</Label>
-                <Input id="reason" name="reason" defaultValue={selectedReturn?.reason} required />
+                <Select name="reason" defaultValue={selectedReturn?.reason || "Other"} required>
+                  <SelectTrigger id="reason" className="w-full">
+                    <SelectValue placeholder="Select a reason..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Product not received">Product not received</SelectItem>
+                    <SelectItem value="Discrepancy with the description">Discrepancy with the description</SelectItem>
+                    <SelectItem value="Faulty product">Faulty product</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
               </Field>
-              {!selectedReturn && (
-                <Field>
-                  <Label htmlFor="description">Description</Label>
-                  <Input id="description" name="description" required />
-                </Field>
-              )}
+
+              <Field>
+                <Label htmlFor="description">Description</Label>
+                <Input id="description" name="description" defaultValue={selectedReturn?.description} required />
+              </Field>
+
             </FieldGroup>
             <DialogFooter className="mt-4">
               <DialogClose asChild>

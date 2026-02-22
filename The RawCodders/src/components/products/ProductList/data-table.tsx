@@ -62,7 +62,7 @@ export function DataTable<TData, TValue>({
   data,
 }: DataTableProps<TData, TValue>) {
   const { setSelectedProduct, setEditProductModalState } = useProductsContext()
-  const deleteProductMutation = useMutation(api.products.deleteOrder)
+  const deleteProductMutation = useMutation(api.products.deleteProduct)
   const table = useReactTable({
     data,
     columns,

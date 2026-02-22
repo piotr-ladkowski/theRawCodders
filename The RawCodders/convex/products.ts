@@ -13,24 +13,25 @@ export const insertProduct = mutation({
     },
 
     handler: async (ctx, args) => {
-        const productId = ctx.db.insert('products', args.product)
+        if (args.product.stock < 0) {
+            throw new Error("Initial stock cannot be less than 0");
+        }
+
+        const productId = await ctx.db.insert('products', args.product)
         return productId
     },
 })
 
 
 export const updateProductStock = mutation({
-
     args: {
         productId: v.id('products'),
         amountChange: v.number()
     },
 
     handler: async (ctx, args) => {
-
         const { productId } = args;
     
-
         const product = await ctx.db.get(args.productId)
 
         if (!product) {
@@ -39,11 +40,13 @@ export const updateProductStock = mutation({
 
         const newStock = product.stock + args.amountChange
 
+        if (newStock < 0) {
+            throw new Error(`Insufficient stock. Cannot reduce stock by ${Math.abs(args.amountChange)}. Only ${product.stock} left.`);
+        }
+
         await ctx.db.patch(productId, { stock: newStock });
         
-
         return productId
-
     },
 })
 
@@ -68,7 +71,7 @@ export const getProduct = query({
 
 })
 
-export const deleteOrder = mutation({
+export const deleteProduct = mutation({
     args: {
         productId: v.id("products"),
     },

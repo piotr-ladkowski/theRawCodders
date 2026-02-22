@@ -2,6 +2,13 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { authTables } from "@convex-dev/auth/server";
 
+export const ReturnReason = v.union(
+  v.literal("Product not received"),
+  v.literal("Discrepancy with the description"),
+  v.literal("Faulty product"),
+  v.literal("Other")
+);
+
 export const TransactionStatus = v.union(
   v.literal("pending"),
   v.literal("completed"),
@@ -15,7 +22,8 @@ export default defineSchema({
     name: v.string(),
     price: v.number(),
     stock: v.number(),
-    image: v.string()
+    image: v.string(),
+    // cost: v.float64()
   })
   .index("by_name", ["name"]),
 
@@ -53,7 +61,7 @@ export default defineSchema({
 
   returns: defineTable({
     orderId: v.id("orders"),
-    reason: v.string(),
+    reason: v.ReturnReason,
     description: v.string()
   }).index("by_orderId", ["orderId"]),
   

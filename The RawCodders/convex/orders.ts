@@ -77,9 +77,11 @@ export const insertOrder = mutation({
 export const updateOrder = mutation({
     args: {
         orderId: v.id("orders"),
-        quantity: v.number(),
+        productId: v.id("products"),
+        quantity: v.float64(),
     },
     handler: async (ctx, args) => {
+
         const order = await ctx.db.get(args.orderId);
         if (!order) throw new Error("Order not found");
 
@@ -92,7 +94,10 @@ export const updateOrder = mutation({
             await ctx.db.patch(order.productId, { stock: product.stock - diff });
         }
 
-        await ctx.db.patch(args.orderId, { quantity: args.quantity });
+        await ctx.db.patch(args.orderId, {
+            productId: args.productId,
+            quantity: args.quantity,
+        });
         await recalculateTransaction(ctx, order.transactionId);
         
         return args.orderId;

@@ -18,6 +18,34 @@ const PRODUCT_NOUNS = ["Widget", "Gadget", "Device", "Tool", "System", "Module",
 const RETURN_REASONS = ["Product not received", "Discrepancy with the description", "Faulty product", "Other"];
 const TRANSACTION_STATUSES = ["pending", "completed", "cancelled"];
 
+
+
+// --- Optional "must-have" records (MERGE-safe) ---
+// Add real clients here that you *always* want present. Seeding will upsert by email.
+const REQUIRED_CLIENTS: Array<{
+  name: string;
+  email: string;
+  phone?: string;
+  birthDate?: string;
+  sex?: "Male" | "Female";
+  address?: {
+    line1: string;
+    line2?: string;
+    postCode: string;
+    city: string;
+    country: string;
+  };
+}> = [
+  // مثال:
+  // {
+  //   name: "Acme Admin",
+  //   email: "admin@acme.com",
+  //   phone: "111-222-3333",
+  //   birthDate: "1990-01-01",
+  //   sex: "Male",
+  //   address: { line1: "1 Main St", postCode: "00-001", city: "Warsaw", country: "Poland" },
+  // },
+];
 function randomItem<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -64,50 +92,114 @@ function generateProduct() {
 
 // --- Seeding Functions ---
 
-async function seedProducts(ctx: any, count: number) {
-  const existing = await ctx.db.query("products").take(1);
-  if (existing.length > 0) {
-    console.log("Products already seeded. Skipping.");
-    return await ctx.db.query("products").collect();
+async function seedProducts(ctx: any, targetTotal: number) {
+  // MERGE-friendly: ensure at least `targetTotal` products exist.
+  // We treat product `name` as the unique key for de-duplication.
+  const existing = await ctx.db.query("products").collect();
+  const existingNames = new Set(existing.map((p: any) => (p?.name ?? "").toLowerCase()).filter(Boolean));
+
+  const missingCount = Math.max(0, targetTotal - existing.length);
+  if (missingCount === 0) {
+    console.log(`Products already >= ${targetTotal}. Skipping.`);
+    return existing;
   }
 
-  const products = [];
-  for (let i = 0; i < count; i++) {
-    products.push(generateProduct());
+  const products: any[] = [];
+  // Generate products until we have enough *new* names.
+  // Hard stop to avoid infinite loops if name space is too small.
+  const hardStop = targetTotal * 20;
+  let attempts = 0;
+
+  while (products.length < missingCount && attempts < hardStop) {
+    attempts++;
+    const p = generateProduct();
+    const key = (p.name ?? "").toLowerCase();
+    if (!key || existingNames.has(key)) continue;
+    existingNames.add(key);
+    products.push(p);
   }
-  
+
+  if (products.length === 0) {
+    console.log("No new unique products could be generated. Skipping.");
+    return existing;
+  }
+
   // Insert in batches
   const batchSize = 50;
   for (let i = 0; i < products.length; i += batchSize) {
     const batch = products.slice(i, i + batchSize);
     await Promise.all(batch.map((p) => ctx.db.insert("products", p)));
   }
-  
-  console.log(`Seeded ${count} products.`);
+
+  console.log(`Seeded ${products.length} new products (targetTotal=${targetTotal}).`);
   return await ctx.db.query("products").collect();
 }
 
-async function seedClients(ctx: any, count: number) {
-  const existing = await ctx.db.query("clients").take(1);
-  if (existing.length > 0) {
-    console.log("Clients already seeded. Skipping.");
+
+async function seedClients(ctx: any, targetTotal: number) {
+  // MERGE-friendly: upsert by email.
+  // 1) Ensure REQUIRED_CLIENTS exist (by email).
+  // 2) Then generate random clients until total clients >= targetTotal (without duplicating emails).
+
+  const existing = await ctx.db.query("clients").collect();
+  const existingByEmail = new Map<string, any>();
+  for (const c of existing) {
+    const email = (c?.email ?? "").toLowerCase();
+    if (email) existingByEmail.set(email, c);
+  }
+
+  let inserted = 0;
+  let ensured = 0;
+
+  // Helper: insert only if missing
+  const ensureClient = async (candidate: any) => {
+    const email = (candidate?.email ?? "").toLowerCase();
+    if (!email) return false;
+    if (existingByEmail.has(email)) return false;
+
+    const id = await ctx.db.insert("clients", candidate);
+    existingByEmail.set(email, { _id: id, ...candidate });
+    inserted++;
+    ensured++;
+    return true;
+  };
+
+  // 1) Required clients first
+  for (const rc of REQUIRED_CLIENTS) {
+    const email = (rc.email ?? "").toLowerCase();
+    if (!email) continue;
+    if (existingByEmail.has(email)) {
+      // Optional: merge/patch missing fields (non-destructive).
+      // If you want to actively update existing clients, uncomment below.
+      // await ctx.db.patch(existingByEmail.get(email)._id, { ...rc });
+      continue;
+    }
+    await ensureClient(rc);
+  }
+
+  // 2) Top-up random clients until targetTotal is reached
+  const missingCount = Math.max(0, targetTotal - existingByEmail.size);
+  if (missingCount === 0) {
+    console.log(`Clients already >= ${targetTotal}. Required ensured: ${ensured}.`);
     return await ctx.db.query("clients").collect();
   }
 
-  const clients = [];
-  for (let i = 0; i < count; i++) {
-    clients.push(generateClient());
+  const hardStop = targetTotal * 50; // avoid infinite loops
+  let attempts = 0;
+  while (existingByEmail.size < targetTotal && attempts < hardStop) {
+    attempts++;
+    const c = generateClient();
+    const email = (c.email ?? "").toLowerCase();
+    if (!email || existingByEmail.has(email)) continue;
+    await ensureClient(c);
   }
 
-  const batchSize = 50;
-  for (let i = 0; i < clients.length; i += batchSize) {
-    const batch = clients.slice(i, i + batchSize);
-    await Promise.all(batch.map((c) => ctx.db.insert("clients", c)));
-  }
-
-  console.log(`Seeded ${count} clients.`);
+  console.log(
+    `Seeded/ensured ${inserted} new clients (targetTotal=${targetTotal}, requiredEnsured=${ensured}).`
+  );
   return await ctx.db.query("clients").collect();
 }
+
 
 // --- Main Mutation ---
 

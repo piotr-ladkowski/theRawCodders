@@ -63,11 +63,14 @@ export const insertOrder = mutation({
 export const updateOrder = mutation({
     args: {
         orderId: v.id("orders"),
-        quantity: v.number(),
+        productId: v.id("products"),
+        quantity: v.float64(),
     },
     handler: async (ctx, args) => {
-        await ctx.db.patch(args.orderId, { quantity: args.quantity });
-        return args.orderId;
+        await ctx.db.patch(args.orderId, {
+            productId: args.productId,
+            quantity: args.quantity,
+        });
     },
 });
 

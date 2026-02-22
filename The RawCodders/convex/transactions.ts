@@ -1,6 +1,12 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 
+const TransactionStatus = v.union(
+  v.literal("pending"),
+  v.literal("completed"),
+  v.literal("cancelled")
+);
+
 export const listTransactions = query({
     args: {},
     handler: async (ctx) => {
@@ -32,7 +38,7 @@ export const getTransactionsByClient = query({
 export const insertTransaction = mutation({
     args: {
         clientId: v.id("clients"),
-        status: v.string(),
+        status: TransactionStatus,
         discount: v.float64(),
         orderId: v.array(v.id("orders"))
     },
@@ -54,7 +60,7 @@ export const updateTransaction = mutation({
     args: {
         transactionId: v.id("transactions"),
         clientId: v.id("clients"),
-        status: v.TransactionStatus,
+        status: TransactionStatus,
         discount: v.float64(),
     },
     handler: async (ctx, args) => {
@@ -70,7 +76,7 @@ export const updateTransaction = mutation({
 export const updateTransactionStatus = mutation({
     args: {
         transactionId: v.id("transactions"),
-        status: v.string(),
+        status: TransactionStatus,
     },
     handler: async (ctx, args) => {
         await ctx.db.patch(args.transactionId, { status: args.status });

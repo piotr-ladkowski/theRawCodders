@@ -11,15 +11,13 @@ import {
 import { Field, FieldGroup } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-
-
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select" 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { IconPlus } from "@tabler/icons-react";
 import { useEffect, useRef } from "react"
 import { useMutation, useQuery } from "convex/react"; 
@@ -59,7 +57,7 @@ export function TransactionModal() {
 
     const commonData = {
       clientId: formData.get("clientId") as Id<"clients">,
-      status: formData.get("status") as string,
+      status: formData.get("status") as "pending" | "completed" | "cancelled",
       discount: Number(formData.get("discount"))
     };
 
@@ -71,9 +69,9 @@ export function TransactionModal() {
         });
       } else {
         await createTransaction({
-          clientId: commonData.clientId, 
+          clientId: commonData.clientId,
           status: commonData.status, 
-          discount: commonData.discount,      
+          discount: commonData.discount,       
           orderId: [],       
         });
       }
@@ -129,7 +127,17 @@ export function TransactionModal() {
 
               <Field>
                 <Label htmlFor="status">Status</Label>
-                <Input id="status" name="status" defaultValue={selectedTransaction?.status} />
+                {/* Changed to a predefined dropdown mapped to the union types */}
+                <Select name="status" defaultValue={selectedTransaction?.status || "pending"}>
+                  <SelectTrigger id="status" className="w-full">
+                    <SelectValue placeholder="Select status..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
               </Field>
               <Field>
                 <Label htmlFor="discount">Discount</Label>

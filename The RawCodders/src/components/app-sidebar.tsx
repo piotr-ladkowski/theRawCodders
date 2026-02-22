@@ -7,9 +7,7 @@ import {
   IconFileDescription,
   IconFileWord,
   IconCreditCardPay,
-  IconHelp,
   IconReport,
-  IconSearch,
   IconSettings,
   IconUsers,
   IconCookie,
@@ -20,7 +18,6 @@ import {
 import { useQuery } from "convex/react"
 import { api } from "../../convex/_generated/api"
 
-import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"

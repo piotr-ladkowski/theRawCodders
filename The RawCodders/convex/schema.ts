@@ -33,7 +33,7 @@ export default defineSchema({
     clientId: v.id("clients"),
     status: v.string(),
     totalPrice: v.float64(),
-    discount: v.number(),
+    discount: v.float64(),
     orderId: v.array(v.id("orders"))
   }).index("by_clientId", ["clientId"]),
 

@@ -33,7 +33,7 @@ export const insertTransaction = mutation({
     args: {
         clientId: v.id("clients"),
         status: v.string(),
-        discount: v.number(),
+        discount: v.float64(),
         orderId: v.array(v.id("orders"))
     },
     handler: async (ctx, args) => {

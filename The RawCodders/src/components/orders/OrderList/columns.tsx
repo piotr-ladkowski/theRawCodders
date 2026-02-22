@@ -21,5 +21,9 @@ export const columns: ColumnDef<TOrder>[] = [
   {
     accessorKey: "quantity",
     header: "Quantity"
+  },
+   {
+    accessorKey: "action",
+    header: "Actions"
   }
 ]

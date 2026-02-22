@@ -28,5 +28,9 @@ export const columns: ColumnDef<TTransaction>[] = [
   {
     accessorKey: "orderId",
     header: "Order Id"
+  },
+  {
+    accessorKey: "action",
+    header: "Actions"
   }
 ]

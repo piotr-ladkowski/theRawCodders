@@ -38,7 +38,7 @@ import { useOrdersContext } from "./orders-context"
 import type { TOrder } from "./columns"
 
 import { api } from "../../../../convex/_generated/api"
-import { useMutation, useQuery } from "convex/react" // Added useQuery
+import { useMutation, useQuery } from "convex/react"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]

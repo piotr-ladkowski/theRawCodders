@@ -15,6 +15,7 @@ jobs:
         run: |
           set -euo pipefail
           cd /opt/the_rawcodders
+          git reset --hard origin/main
           git pull origin main
 
       - name: Deploy Infrastructure

@@ -18,8 +18,9 @@ jobs:
           git pull origin main
           cd "/opt/the_rawcodders/The RawCodders"
 
-          sudo docker compose --env-file .env.local -f docker-compose.yml down --remove-orphans
           sudo docker compose --env-file .env.local -f docker-compose.yml build
+          sudo docker compose --env-file .env.local -f docker-compose.yml down --remove-orphans
+          
 
           # start backend first and wait for healthcheck
           sudo docker compose --env-file .env.local -f docker-compose.yml up -d --wait backend

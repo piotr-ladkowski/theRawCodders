@@ -6,6 +6,7 @@ import { OrderModal } from "./OrderList/order-modal";
 import { useState } from "react";
 import { TOrder } from "./OrderList/columns";
 import { OrdersProvider } from "./OrderList/orders-context";
+import { Spinner } from "../ui/spinner";
 
 
 export default function Orders(){
@@ -13,10 +14,9 @@ export default function Orders(){
     const [selectedOrder, setSelectedOrder] = useState<TOrder>();
     const [editOrderModalState, setEditOrderModalState] = useState<boolean>(false);
     
-    if (orders === undefined) {
-        return <div>Loading...</div>;
-        // TODO
-    }
+  if (orders === undefined) {
+    return <div className="flex justify-center items-center h-full"><Spinner className="size-12"/></div>;
+  }
 
     return (
         <div>

@@ -24,7 +24,6 @@ export function ReturnModal() {
 
   const createReturn = useMutation(api.returns.insertReturn);
   const updateReturn = useMutation(api.returns.updateReturn);
-  const createTransaction = useMutation(api.transactions.insertTransaction);
 
   function scheduleClearSelectedReturn() {
     if (clearSelectedTimeoutRef.current !== null) {
@@ -48,30 +47,25 @@ export function ReturnModal() {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
 
-
-    const commonData = {
-      productId: formData.get("productId") as Id<"products">,
-      quantity: Number(formData.get("quantity"))
-    };
+    const reason = formData.get("reason") as string;
+    const description = formData.get("description") as string;
 
     try {
       if (selectedReturn?._id) {
+
         await updateReturn({
-          ReturnId: selectedReturn._id,
-          ...commonData,
+          returnId: selectedReturn._id,
+          reason: reason,
+          description: description
         });
       } else {
-
-        const newTransactionId = await createTransaction({
-          clientId: "jx7547q51txvpssfavt9bvtwvn81kh59" as Id<"clients">, //TODO
-          status: "Returned", // Default status
-          discount: 0,       // Default discount
-          ReturnId: [],       // Empty array to start
-        });
+        const orderId = formData.get("orderId") as Id<"orders">;
+        const description = formData.get("description") as string;
 
         await createReturn({
-          ...commonData,
-          transactionId: newTransactionId 
+          orderId,
+          reason,
+          description
         });
       }
       setEditReturnModalState(false); // Close the modal on success
@@ -89,7 +83,6 @@ export function ReturnModal() {
         if (!open) {
           scheduleClearSelectedReturn();
         }
-        
       }}
     >
         <DialogTrigger asChild>
@@ -103,14 +96,22 @@ export function ReturnModal() {
               <DialogTitle>{selectedReturn ? "Edit" : "Add"} Return</DialogTitle>
             </DialogHeader>
             <FieldGroup>
+              {!selectedReturn && (
+                 <Field>
+                   <Label htmlFor="orderId">Order ID</Label>
+                   <Input id="orderId" name="orderId" placeholder="Insert Order ID..." required />
+                 </Field>
+              )}
               <Field>
-                <Label htmlFor="productId-1">Product Id</Label>
-                <Input id="productId-1" name="productId" defaultValue={selectedReturn?.productId} />
+                <Label htmlFor="reason">Reason</Label>
+                <Input id="reason" name="reason" defaultValue={selectedReturn?.reason} required />
               </Field>
-              <Field>
-                <Label htmlFor="quantity-1">Quantity</Label>
-                <Input id="quantity-1" name="quantity" defaultValue={selectedReturn?.quantity}/>
-              </Field>
+              {!selectedReturn && (
+                <Field>
+                  <Label htmlFor="description">Description</Label>
+                  <Input id="description" name="description" required />
+                </Field>
+              )}
             </FieldGroup>
             <DialogFooter className="mt-4">
               <DialogClose asChild>

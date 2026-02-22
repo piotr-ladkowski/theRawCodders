@@ -16,7 +16,7 @@ export type TOrder = {
 export const columns: ColumnDef<TOrder>[] = [
   {
     accessorKey: "productId",
-    header: "Product id"
+    header: "Product"
   },
   {
     accessorKey: "quantity",

@@ -1,4 +1,4 @@
-"use Order"
+"use client"
 
 import {
   ColumnDef,
@@ -38,7 +38,7 @@ import { useOrdersContext } from "./orders-context"
 import type { TOrder } from "./columns"
 
 import { api } from "../../../../convex/_generated/api"
-import { useMutation } from "convex/react"
+import { useMutation, useQuery } from "convex/react" // Added useQuery
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -51,6 +51,10 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   const { setSelectedOrder, setEditOrderModalState } = useOrdersContext()
   const deleteOrderMutation = useMutation(api.orders.deleteOrder)
+  
+  // Fetch products to map the names
+  const products = useQuery(api.products.listProducts);
+
   const table = useReactTable({
     data,
     columns,
@@ -84,12 +88,18 @@ export function DataTable<TData, TValue>({
   }
 
 
-  function RenderObject(object: object, accessorKey: string, Order: TOrder) {
+  function RenderObject(object: any, accessorKey: string, Order: TOrder) {
     const obj = object as Record<string, any>;
 
+    // Map Product ID to Product Name
+    if (accessorKey === "productId") {
+      const productId = object as string;
+      const product = products?.find((p) => p._id === productId);
+      return <span>{product ? product.name : "Loading..."}</span>;
+    }
     
     // Check if this is an address object
-    if (accessorKey === "address") {
+    else if (accessorKey === "address") {
       return (
         <HoverCard openDelay={10} closeDelay={100}>
           <HoverCardTrigger asChild>
@@ -113,9 +123,6 @@ export function DataTable<TData, TValue>({
     }
     
   }
-
-
-
 
 
   return (
@@ -151,8 +158,9 @@ export function DataTable<TData, TValue>({
 
                   return (
                     <TableCell key={cell.id}>
-                      {cell.getValue() !== null && (accessorKey === "action" || accessorKey === "address")
-                        ?  RenderObject(cell.getValue() as object, accessorKey, row.original as TOrder)
+                      {/* Added productId to the intercepted keys to route it through RenderObject */}
+                      {cell.getValue() !== null && (accessorKey === "action" || accessorKey === "address" || accessorKey === "productId")
+                        ?  RenderObject(cell.getValue(), accessorKey, row.original as TOrder)
                         : flexRender(cell.column.columnDef.cell, cell.getContext()) 
                        }
                     </TableCell>

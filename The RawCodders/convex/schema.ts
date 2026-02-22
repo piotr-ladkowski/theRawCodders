@@ -61,7 +61,7 @@ export default defineSchema({
 
   returns: defineTable({
     orderId: v.id("orders"),
-    reason: v.ReturnReason,
+    reason: ReturnReason,
     description: v.string()
   }).index("by_orderId", ["orderId"]),
   

@@ -6,13 +6,15 @@ import { ClientModal } from "./ClientList/client-modal";
 import { useState } from "react";
 import { TClient } from "./ClientList/columns";
 import { ClientsProvider } from "./ClientList/clients-context";
+import { Spinner } from "../ui/spinner";
+
 export default function Clients() {
   const clients = useQuery(api.clients.listClients);
   const [selectedClient, setSelectedClient] = useState<TClient>();
   const [editClientModalState, setEditClientModalState] = useState<boolean>(false);
 
   if (clients === undefined) {
-    return <div>Loading...</div>;
+    return <div className="flex justify-center items-center h-full"><Spinner className="size-12"/></div>;
   }
 
   return (

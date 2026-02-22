@@ -2,6 +2,12 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { authTables } from "@convex-dev/auth/server";
 
+export const TransactionStatus = v.union(
+  v.literal("pending"),
+  v.literal("completed"),
+  v.literal("cancelled")
+);
+
 export default defineSchema({
   ...authTables,
 
@@ -31,7 +37,7 @@ export default defineSchema({
 
   transactions: defineTable({
     clientId: v.id("clients"),
-    status: v.string(),
+    status: TransactionStatus,
     totalPrice: v.float64(),
     discount: v.float64(),
     orderId: v.array(v.id("orders"))

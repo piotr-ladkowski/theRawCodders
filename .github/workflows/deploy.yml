@@ -11,24 +11,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build, sync Convex env, deploy, run
+      - name: Pull latest code
         run: |
           set -euo pipefail
           cd /opt/the_rawcodders
           git pull origin main
+
+      - name: Deploy Infrastructure
+        run: |
+          set -euo pipefail
           cd "/opt/the_rawcodders/The RawCodders"
 
-          sudo docker compose --env-file .env.local -f docker-compose.yml build
-          sudo docker compose --env-file .env.local -f docker-compose.yml down --remove-orphans
+          # 1. Stop existing services cleanly
+          sudo docker compose --env-file .env.local down --remove-orphans
           
+          # 2. Start backend first and wait for it to be healthy
+          sudo docker compose --env-file .env.local up -d --wait backend
 
-          # start backend first and wait for healthcheck
-          sudo docker compose --env-file .env.local -f docker-compose.yml up -d --wait backend
-
-          # ---- sync Convex deployment env vars from .env.local (handles PEM safely) ----
-          sudo docker compose --env-file .env.local -f docker-compose.yml run --rm convex-deploy sh -lc '
+          # 3. Sync Env AND Deploy Convex in ONE container run
+          sudo docker compose --env-file .env.local run --rm convex-deploy sh -lc '
           set -euo pipefail
 
+          # ---- Sync Convex Env Vars ----
           node - <<'"'"'NODE'"'"'
           const fs = require("fs");
 
@@ -38,23 +42,18 @@ jobs:
             let i = 0;
 
             while (i < txt.length) {
-              // skip newlines
               while (i < txt.length && (txt[i] === "\n" || txt[i] === "\r")) i++;
               if (i >= txt.length) break;
-
-              // comments
               if (txt[i] === "#") { while (i < txt.length && txt[i] !== "\n") i++; continue; }
 
-              // key
               let key = "";
               while (i < txt.length && /[A-Za-z0-9_]/.test(txt[i])) key += txt[i++];
               while (i < txt.length && (txt[i] === " " || txt[i] === "\t")) i++;
 
               if (txt[i] !== "=") { while (i < txt.length && txt[i] !== "\n") i++; continue; }
-              i++; // '='
+              i++;
               while (i < txt.length && (txt[i] === " " || txt[i] === "\t")) i++;
 
-              // value (supports "multi line" until closing quote)
               let val = "";
               if (txt[i] === "\"") {
                 i++;
@@ -70,13 +69,12 @@ jobs:
               if (key) out[key] = val;
               while (i < txt.length && txt[i] !== "\n") i++;
             }
-
             return out;
           }
 
           (async () => {
             const env = parseEnv("/app/.env.local");
-            const base = process.env.CONVEX_SELF_HOSTED_URL;          // e.g. http://backend:3210
+            const base = process.env.CONVEX_SELF_HOSTED_URL;
             const adminKey = process.env.CONVEX_SELF_HOSTED_ADMIN_KEY;
 
             for (const k of ["SITE_URL", "JWT_PRIVATE_KEY", "JWKS"]) {
@@ -100,21 +98,22 @@ jobs:
               }),
             });
 
-            const text = await res.text();
             if (!res.ok) {
-              console.error("Failed:", res.status, text);
+              console.error("Failed:", res.status, await res.text());
               process.exit(1);
             }
-            console.log("✅ Convex env vars synced (SITE_URL, JWT_PRIVATE_KEY, JWKS).");
+            console.log("✅ Convex env vars synced.");
           })().catch((e) => {
             console.error(e);
             process.exit(1);
           });
           NODE
+
+          # ---- Deploy Convex Functions ----
+          # Switched to npm install with caching flags instead of strict ci
+          npm install --prefer-offline --no-audit --no-fund
+          npx convex deploy --yes --url $CONVEX_SELF_HOSTED_URL --admin-key $CONVEX_SELF_HOSTED_ADMIN_KEY
           '
 
-          # deploy convex functions
-          sudo docker compose --env-file .env.local -f docker-compose.yml run --rm convex-deploy
-
-          # bring everything up
-          sudo docker compose --env-file .env.local -f docker-compose.yml up -d --build
+          # 4. Bring up the remaining services (frontend & dashboard) and build if needed
+          sudo docker compose --env-file .env.local up -d --build

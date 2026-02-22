@@ -48,9 +48,13 @@ export const updateReturn = mutation({
     args: {
         returnId: v.id("returns"),
         reason: v.string(),
+        description: v.string(),
     },
     handler: async (ctx, args) => {
-        await ctx.db.patch(args.returnId, { reason: args.reason });
+        await ctx.db.patch(args.returnId, { 
+            reason: args.reason, 
+            description: args.description
+        });
         return args.returnId;
     },
 });

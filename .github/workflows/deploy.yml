@@ -113,6 +113,10 @@ jobs:
           # Switched to npm install with caching flags instead of strict ci
           npm install --prefer-offline --no-audit --no-fund
           npx convex deploy --yes --url $CONVEX_SELF_HOSTED_URL --admin-key $CONVEX_SELF_HOSTED_ADMIN_KEY
+
+          # ---- Seed Database ----
+          echo "Seeding database..."
+          npx convex run seed:seedClients --url $CONVEX_SELF_HOSTED_URL --admin-key $CONVEX_SELF_HOSTED_ADMIN_KEY
           '
 
           # 4. Bring up the remaining services (frontend & dashboard) and build if needed

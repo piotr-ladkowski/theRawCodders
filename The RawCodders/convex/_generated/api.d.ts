@@ -15,6 +15,7 @@ import type * as myFunctions from "../myFunctions.js";
 import type * as orders from "../orders.js";
 import type * as products from "../products.js";
 import type * as returns from "../returns.js";
+import type * as seed from "../seed.js";
 import type * as transactions from "../transactions.js";
 
 import type {
@@ -31,6 +32,7 @@ declare const fullApi: ApiFromModules<{
   orders: typeof orders;
   products: typeof products;
   returns: typeof returns;
+  seed: typeof seed;
   transactions: typeof transactions;
 }>;
 

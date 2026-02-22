@@ -94,7 +94,7 @@ export function OrderModal() {
       } else {
         const newTransactionId = await createTransaction({
           clientId: "jx7547q51txvpssfavt9bvtwvn81kh59" as Id<"clients">, //TODO
-          status: "ordered", // Default status
+          status: "pending", // Default status
           discount: 0,       // Default discount
           orderId: [],       // Empty array to start
         });

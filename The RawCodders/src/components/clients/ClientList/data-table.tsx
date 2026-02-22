@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+
 import {
   ColumnDef,
   flexRender,
@@ -26,6 +28,16 @@ import { Button } from "@/components/ui/button"
 
 import { IconAddressBook, IconDotsVertical } from "@tabler/icons-react"
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 import {
   DropdownMenu,
@@ -58,27 +70,47 @@ export function DataTable<TData, TValue>({
   })
 
   function ActionMenu({obj}: {obj: TClient}) {
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+
     return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost">
-            <IconDotsVertical className="text-white"/>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuGroup>
-            <DropdownMenuItem onClick={() => { setSelectedClient(obj); setEditClientModalState(true);}}>
-                Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() =>{void deleteClientMutation({ clientId: obj._id })}}
-              className="hover:!bg-red-400"
-            >
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost">
+              <IconDotsVertical className="text-white"/>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => { setSelectedClient(obj); setEditClientModalState(true);}}>
+                  Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="hover:!bg-red-400"
+                onSelect={(event) => {
+                  event.preventDefault()
+                  setIsDeleteDialogOpen(true)
+                }}
+              >
                 Delete
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete this client from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() =>{void deleteClientMutation({ clientId: obj._id })}}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     )
 
   }

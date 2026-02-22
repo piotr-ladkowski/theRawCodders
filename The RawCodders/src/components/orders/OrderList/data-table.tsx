@@ -1,5 +1,3 @@
-"use Order"
-
 import {
   ColumnDef,
   flexRender,
@@ -26,6 +24,16 @@ import { Button } from "@/components/ui/button"
 
 import { IconAddressBook, IconDotsVertical } from "@tabler/icons-react"
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 import {
   DropdownMenu,
@@ -39,6 +47,7 @@ import type { TOrder } from "./columns"
 
 import { api } from "../../../../convex/_generated/api"
 import { useMutation } from "convex/react"
+import { useState } from "react"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -57,28 +66,47 @@ export function DataTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
   })
 
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
   function ActionMenu({obj}: {obj: TOrder}) {
     return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost">
-            <IconDotsVertical className="text-white"/>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuGroup>
-            <DropdownMenuItem onClick={() => { setSelectedOrder(obj); setEditOrderModalState(true);}}>
-                Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() =>{void deleteOrderMutation({ orderId: obj._id })}}
-              className="hover:!bg-red-400"
-            >
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost">
+              <IconDotsVertical className="text-white"/>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => { setSelectedOrder(obj); setEditOrderModalState(true);}}>
+                  Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="hover:!bg-red-400"
+                onSelect={(event) => {
+                  event.preventDefault()
+                  setIsDeleteDialogOpen(true)
+                }}
+              >
                 Delete
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete this order from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() =>{void deleteOrderMutation({ orderId: obj._id })}}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     )
 
   }
@@ -113,9 +141,6 @@ export function DataTable<TData, TValue>({
     }
     
   }
-
-
-
 
 
   return (

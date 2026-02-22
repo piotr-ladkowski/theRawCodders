@@ -39,6 +39,18 @@ import type { TReturn } from "./columns"
 
 import { api } from "../../../../convex/_generated/api"
 import { useMutation } from "convex/react"
+import { useState } from "react"
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -57,28 +69,48 @@ export function DataTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
   })
 
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+
   function ActionMenu({obj}: {obj: TReturn}) {
     return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost">
-            <IconDotsVertical className="text-white"/>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuGroup>
-            <DropdownMenuItem onClick={() => { setSelectedReturn(obj); setEditReturnModalState(true);}}>
-                Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() =>{void deleteReturnMutation({ returnId: obj._id })}}
-              className="hover:!bg-red-400"
-            >
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost">
+              <IconDotsVertical className="text-white"/>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => { setSelectedReturn(obj); setEditReturnModalState(true);}}>
+                  Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="hover:!bg-red-400"
+                onSelect={(event) => {
+                  event.preventDefault()
+                  setIsDeleteDialogOpen(true)
+                }}
+              >
                 Delete
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete this return from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() =>{void deleteReturnMutation({ returnId: obj._id })}}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     )
 
   }

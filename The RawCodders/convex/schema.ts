@@ -4,7 +4,6 @@ import { authTables } from "@convex-dev/auth/server";
 
 export const TransactionStatus = v.union(
   v.literal("pending"),
-  v.literal("ordered"),   // <— add temporarily
   v.literal("completed"),
   v.literal("cancelled")
 );

@@ -109,7 +109,7 @@ export function ProductModal() {
         <DialogContent className="sm:max-w-sm ">
           <form onSubmit={(event) => { void handleSubmit(event); }}>
             <DialogHeader className="mb-4">
-              <DialogTitle>{selectedProduct ? "Edit" : "Add"} client</DialogTitle>
+              <DialogTitle>{selectedProduct ? "Edit" : "Add"} product</DialogTitle>
             </DialogHeader>
             <FieldGroup>
               <Field>

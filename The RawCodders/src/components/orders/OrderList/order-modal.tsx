@@ -32,7 +32,7 @@ export function OrderModal() {
   const createTransaction = useMutation(api.transactions.insertTransaction);
   
   // Fetch products to populate the dropdown
-  const products = useQuery(api.products.listProducts);
+  const products = useQuery(api.products.listProducts, { offset: 0, limit: 50 });
 
   // Combobox State
   const [open, setOpen] = useState(false);
@@ -86,7 +86,8 @@ export function OrderModal() {
           clientId: "jx7547q51txvpssfavt9bvtwvn81kh59" as Id<"clients">, //TODO
           status: "pending", // Default status
           discount: 0,       // Default discount
-          orderId: [],       // Empty array to start
+          orderId: [],       // Empty array to start,
+          date: new Date().toISOString()
         });
 
         await createOrder({

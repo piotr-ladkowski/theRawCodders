@@ -29,7 +29,7 @@ export function TransactionModal() {
   const { selectedTransaction, setSelectedTransaction, editTransactionModalState, setEditTransactionModalState } = useTransactionsContext();
   const clearSelectedTimeoutRef = useRef<number | null>(null);
 
-  const clients = useQuery(api.clients.listClients); 
+  const clients = useQuery(api.clients.listClients, { offset: 0, limit: 50 }); 
 
   const createTransaction = useMutation(api.transactions.insertTransaction);
   const updateTransaction = useMutation(api.transactions.updateTransaction);
@@ -73,6 +73,7 @@ export function TransactionModal() {
           status: commonData.status, 
           discount: commonData.discount,       
           orderId: [],       
+          date: new Date().toISOString()
         });
       }
       setEditTransactionModalState(false); 

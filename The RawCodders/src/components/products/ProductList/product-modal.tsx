@@ -41,7 +41,7 @@ export function ProductModal() {
   };
 
   const createProduct = useMutation(api.products.insertProduct);
-  const updateProduct = useMutation(api.products.updateProductStock);
+  const updateProduct = useMutation(api.products.updateProduct);
 
   function scheduleClearSelectedProduct() {
     if (clearSelectedTimeoutRef.current !== null) {
@@ -66,17 +66,24 @@ export function ProductModal() {
     const formData = new FormData(event.currentTarget);
 
     const commonData = {
-      name: formData.get("name") as string,
-      image: formData.get("imageUrl") as string,
-      stock: Number(formData.get("stock")),
-      price: Number(formData.get("price"))
+      name: (formData.get("name") as string) || (selectedProduct?.name ?? ""),
+      image: (formData.get("imageUrl") as string) || (selectedProduct?.image ?? ""),
+      stock: selectedProduct 
+        ? (selectedProduct.stock + Number(formData.get("stock")))
+        : Number(formData.get("stock")),
+      price: selectedProduct
+        ? (selectedProduct.price)
+        : Number(formData.get("price")),
+      cost: selectedProduct
+        ? (selectedProduct.cost)
+        : Number(formData.get("cost"))
     };
 
     try {
       if (selectedProduct?._id) {
         await updateProduct({
           productId: selectedProduct._id,
-          amountChange: Number(formData.get("stock"))
+          product: commonData
         });
       } else {
         await createProduct({
@@ -126,17 +133,21 @@ export function ProductModal() {
                 </InputGroup>
               </Field>}
               <Field>
-                <Label htmlFor="phone-1">Stock</Label>
+                <Label htmlFor="stock-1">Stock</Label>
                 <InputGroup>
                   <InputGroupAddon>
                       {!!selectedProduct && <InputGroupText>+</InputGroupText>}
                   </InputGroupAddon>
-                  <InputGroupInput id="phone-1" type="number" name="stock" defaultValue={0} />
+                  <InputGroupInput id="stock-1" type="number" name="stock" defaultValue={selectedProduct ? 0 : 10} />
                 </InputGroup>
               </Field>
               {!selectedProduct && <Field>
-                <Label htmlFor="phone-1">Price</Label>
-                  <Input id="phone-1" type="number" name="price" defaultValue={50} />
+                <Label htmlFor="price-1">Price</Label>
+                  <Input id="price-1" type="number" name="price" defaultValue={50} />
+              </Field>}
+              {!selectedProduct && <Field>
+                <Label htmlFor="cost-1">Cost</Label>
+                  <Input id="cost-1" type="number" name="cost" defaultValue={30} />
               </Field>}
             </FieldGroup>
             <DialogFooter className="mt-4">

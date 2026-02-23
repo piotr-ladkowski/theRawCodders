@@ -1,19 +1,42 @@
-import { useQuery } from "convex/react";
+import { useConvex, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { columns } from "@/components/orders/OrderList/columns"
 import { DataTable } from "@/components/orders/OrderList/data-table"
 import { OrderModal } from "./OrderList/order-modal";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TOrder } from "./OrderList/columns";
 import { OrdersProvider } from "./OrderList/orders-context";
 import { Spinner } from "../ui/spinner";
 
 
 export default function Orders(){
-    const orders = useQuery(api.orders.listOrders);
-    const [selectedOrder, setSelectedOrder] = useState<TOrder>();
-    const [editOrderModalState, setEditOrderModalState] = useState<boolean>(false);
-    
+  const orders = useQuery(api.orders.listOrders, {offset: 2, limit: 1});
+  const [selectedOrder, setSelectedOrder] = useState<TOrder>();
+  const [editOrderModalState, setEditOrderModalState] = useState<boolean>(false);
+  const [orderData, setOrderData] = useState<TOrder[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [docCount, setDocCount] = useState(15);
+  const [tableSize, setTableSize] = useState(0);
+
+  const pageSettings = {
+    currentPage,
+    setCurrentPage,
+    docCount,
+    setDocCount,
+    tableSize
+  }
+
+  const convex = useConvex();
+
+  useEffect(() => {
+    const getAndSet = async () => { 
+      await convex.query(api.orders.listOrders, {offset: ((currentPage-1)*docCount), limit: docCount})
+      .then((res) => {setOrderData(res.data); setTableSize(res.total);})
+    }
+    void getAndSet();
+  }, [currentPage, docCount, convex])
+
+
   if (orders === undefined) {
     return <div className="flex justify-center items-center h-full"><Spinner className="size-12"/></div>;
   }
@@ -26,7 +49,7 @@ export default function Orders(){
                     <div>Orders</div>
                     <OrderModal />
                   </div>
-                <DataTable columns={columns} data={orders} />
+                <DataTable columns={columns} data={orderData} pageSettings={pageSettings}  />
               </OrdersProvider>
             </div>
         </div>

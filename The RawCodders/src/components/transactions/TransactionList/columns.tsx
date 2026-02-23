@@ -6,12 +6,14 @@ import { Doc } from "../../../../convex/_generated/dataModel";
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
 
-export type TTransaction = Doc<"transactions">;
+export type TTransaction = Doc<"transactions"> & {
+  clientName?: string;
+};
 
 export const columns: ColumnDef<TTransaction>[] = [
   {
-    accessorKey: "clientId",
-    header: "Client id"
+    accessorKey: "clientName",
+    header: "Client"
   },
   {
     accessorKey: "status",

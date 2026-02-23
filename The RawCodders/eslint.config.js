@@ -43,6 +43,7 @@ export default defineConfig([
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      "react-hooks/incompatible-library": "off",
       "react-refresh/only-export-components": [
         "warn",
         { allowConstantExport: true },
@@ -58,7 +59,7 @@ export default defineConfig([
       ],
 
       // Allow escaping the compiler
-      "@typescript-eslint/ban-ts-comment": "error",
+      "@typescript-eslint/ban-ts-comment": "warn",
 
       // Allow explicit `any`s
       "@typescript-eslint/no-explicit-any": "off",
@@ -74,7 +75,16 @@ export default defineConfig([
       // Allow async functions without await
       // for consistency (esp. Convex `handler`s)
       "@typescript-eslint/require-await": "off",
+
+      // Ignore Convex explicit table IDs requirement
+      "@convex-dev/explicit-table-ids": "off",
     },
   },
   ...convexPlugin.configs.recommended,
+  {
+    files: ["convex/**/*.ts"],
+    rules: {
+      "@convex-dev/explicit-table-ids": "off",
+    },
+  },
 ]);

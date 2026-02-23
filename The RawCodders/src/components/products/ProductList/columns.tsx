@@ -11,6 +11,7 @@ export type TProduct = {
   name: string
   image: string
   price: number
+  cost: number
   stock: number
 }
 
@@ -26,6 +27,10 @@ export const columns: ColumnDef<TProduct>[] = [
   {
     accessorKey: "price",
     header: "Price"
+  },
+  {
+    accessorKey: "cost",
+    header: "Cost"
   },
   {
     accessorKey: "stock",

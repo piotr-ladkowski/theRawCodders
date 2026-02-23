@@ -9,9 +9,20 @@ export const ReturnReason = v.union(
 );
 
 export const listReturns = query({
-    args: {},
-    handler: async (ctx) => {
-        return await ctx.db.query("returns").collect();
+    args: {
+        limit: v.optional(v.number()),
+        offset: v.optional(v.number()),
+    },
+    handler: async (ctx, args) => {
+        let returns = await ctx.db.query("returns").collect();
+
+        const offset = args.offset ?? 0;
+        const limit = args.limit ?? 50;
+        if (args.limit !== undefined) {
+            return returns.slice(offset, offset + args.limit);
+        }
+        
+        return returns.slice(offset);
     },
 });
 

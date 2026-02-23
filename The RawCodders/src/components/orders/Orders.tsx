@@ -15,8 +15,9 @@ export default function Orders(){
   const [editOrderModalState, setEditOrderModalState] = useState<boolean>(false);
   const [orderData, setOrderData] = useState<TOrder[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [docCount, setDocCount] = useState(15);
+  const [docCount, setDocCount] = useState(Number(localStorage.getItem("itemsOnPage") ?? "15"));
   const [tableSize, setTableSize] = useState(0);
+  const [modalObserver, setModalObserver] = useState(0);
 
   const pageSettings = {
     currentPage,
@@ -29,12 +30,17 @@ export default function Orders(){
   const convex = useConvex();
 
   useEffect(() => {
+    localStorage.setItem("itemsOnPage", String(docCount))
     const getAndSet = async () => { 
       await convex.query(api.orders.listOrders, {offset: ((currentPage-1)*docCount), limit: docCount})
-      .then((res) => {setOrderData(res.data); setTableSize(res.total);})
+      .then((res) => {
+        setOrderData(res.data); 
+        setTableSize(res.total);
+      })
+
     }
     void getAndSet();
-  }, [currentPage, docCount, convex])
+  }, [currentPage, docCount, modalObserver, convex])
 
 
   if (orders === undefined) {
@@ -44,7 +50,7 @@ export default function Orders(){
     return (
         <div>
             <div className="container mx-auto px-6 py-3">
-              <OrdersProvider value={{ selectedOrder, setSelectedOrder, editOrderModalState, setEditOrderModalState }}>
+              <OrdersProvider value={{ selectedOrder, setSelectedOrder, editOrderModalState, setEditOrderModalState, modalObserver, setModalObserver }}>
                 <div className="text-2xl flex gap-4 items-center font-bold mb-3">
                     <div>Orders</div>
                     <OrderModal />

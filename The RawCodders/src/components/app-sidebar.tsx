@@ -68,6 +68,11 @@ const data = {
       url: "/dashboard/returns",
       icon: IconTruckReturn,
     },
+    {
+      title: "AI Insights",
+      url: "/dashboard/insights",
+      icon: IconFileAi,
+    },
   ],
   navClouds: [
     {

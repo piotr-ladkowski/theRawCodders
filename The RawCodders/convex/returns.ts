@@ -1,6 +1,13 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 
+export const ReturnReason = v.union(
+  v.literal("Product not received"),
+  v.literal("Discrepancy with the description"),
+  v.literal("Faulty product"),
+  v.literal("Other")
+);
+
 export const listReturns = query({
     args: {},
     handler: async (ctx) => {
@@ -32,7 +39,7 @@ export const getReturnByOrder = query({
 export const insertReturn = mutation({
     args: {
         orderId: v.id("orders"),
-        reason: v.string(),
+        reason: ReturnReason,
         description: v.string()
     },
     handler: async (ctx, args) => {
@@ -47,7 +54,7 @@ export const insertReturn = mutation({
 export const updateReturn = mutation({
     args: {
         returnId: v.id("returns"),
-        reason: v.string(),
+        reason: ReturnReason,
         description: v.string(),
     },
     handler: async (ctx, args) => {

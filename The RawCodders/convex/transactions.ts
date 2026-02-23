@@ -1,11 +1,40 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { query, mutation, MutationCtx } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 
 const TransactionStatus = v.union(
   v.literal("pending"),
   v.literal("completed"),
   v.literal("cancelled")
 );
+
+export async function recalculateTransaction(ctx: MutationCtx, transactionId: Id<"transactions">) {
+    const transaction = await ctx.db.get(transactionId);
+    if (!transaction) return;
+
+    const orders = await ctx.db
+        .query("orders")
+        .withIndex("by_transactionId", (q) => q.eq("transactionId", transactionId))
+        .collect();
+
+    let sum = 0;
+    const orderIds = [];
+
+    for (const order of orders) {
+        orderIds.push(order._id);
+        const product = await ctx.db.get(order.productId);
+        if (product) {
+            sum += product.price * order.quantity;
+        }
+    }
+
+    const totalPrice = Math.max(0, sum - transaction.discount);
+
+    await ctx.db.patch(transactionId, {
+        orderId: orderIds,
+        totalPrice: totalPrice,
+    });
+}
 
 export const listTransactions = query({
     args: {},
@@ -69,6 +98,8 @@ export const updateTransaction = mutation({
             status: args.status, 
             discount: args.discount 
         });
+        
+        await recalculateTransaction(ctx, args.transactionId);
         return args.transactionId;
     },
 });
@@ -91,36 +122,16 @@ export const addOrderToTransaction = mutation({
     },
     handler: async (ctx, args) => {
         const transaction = await ctx.db.get(args.transactionId);
-        if (!transaction) {
-            throw new Error("Transaction not found");
-        }
+        if (!transaction) throw new Error("Transaction not found");
 
         const order = await ctx.db.get(args.orderId);
-        if (!order) {
-            throw new Error("Order not found");
-        }
-
-        if (transaction.orderId.includes(args.orderId)) {
-            return args.transactionId;
-        }
-
-        const product = await ctx.db.get(order.productId);
-        if (!product) {
-            throw new Error("Product not found");
-        }
-
-        const orderTotal = product.price * order.quantity;
-        const newOrderIds = [...transaction.orderId, args.orderId];
-        
-        await ctx.db.patch(args.transactionId, {
-            orderId: newOrderIds,
-            totalPrice: transaction.totalPrice + orderTotal
-        });
+        if (!order) throw new Error("Order not found");
 
         if (order.transactionId !== args.transactionId) {
             await ctx.db.patch(args.orderId, { transactionId: args.transactionId });
         }
 
+        await recalculateTransaction(ctx, args.transactionId);
         return args.transactionId;
     },
 });

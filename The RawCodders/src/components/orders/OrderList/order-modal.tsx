@@ -37,17 +37,7 @@ export function OrderModal() {
   // Combobox State
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedProductId, setSelectedProductId] = useState<Id<"products"> | undefined>(undefined);
-
-  // Pre-fill selected product when editing an existing order
-  useEffect(() => {
-    if (selectedOrder?.productId) {
-      setSelectedProductId(selectedOrder.productId as Id<"products">);
-    } else {
-      setSelectedProductId(undefined);
-    }
-    setSearchQuery(""); // Clear search on open/close
-  }, [selectedOrder, editOrderModalState]);
+  const selectedProductId = selectedOrder?.productId as Id<"products"> | undefined;
 
   // Filter products based on search input
   const filteredProducts = products?.filter((product) =>
@@ -176,7 +166,7 @@ export function OrderModal() {
                               selectedProductId === product._id ? "bg-accent text-accent-foreground" : ""
                             }`}
                             onClick={() => {
-                              setSelectedProductId(product._id);
+                              setSelectedOrder({ ...selectedOrder!, productId: product._id });
                               setOpen(false); // Close dropdown after selection
                             }}
                           >

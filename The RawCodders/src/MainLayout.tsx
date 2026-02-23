@@ -5,10 +5,9 @@ import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar"
-import { ReactElement } from "react"
 import { Outlet } from "react-router-dom"
 
-export default function MainLayout({children}: {children?: ReactElement}) {
+export default function MainLayout() {
     return (
     <SidebarProvider
       style={
@@ -21,7 +20,6 @@ export default function MainLayout({children}: {children?: ReactElement}) {
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
-          {children}
           <Outlet />
       </SidebarInset>
     </SidebarProvider>

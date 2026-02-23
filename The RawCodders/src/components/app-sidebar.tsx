@@ -7,18 +7,16 @@ import {
   IconFileDescription,
   IconFileWord,
   IconCreditCardPay,
-  IconHelp,
   IconReport,
-  IconSearch,
   IconSettings,
   IconUsers,
-  IconCookie,
   IconShoppingCart,
   IconAssembly,
   IconTruckReturn
 } from "@tabler/icons-react"
+import { useQuery } from "convex/react"
+import { api } from "../../convex/_generated/api"
 
-import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
@@ -31,10 +29,11 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { Link } from "react-router-dom"
 
 const data = {
   user: {
-    name: "shadcn",
+    name: "user",
     email: "m@example.com",
     avatar: "/avatars/shadcn.jpg",
   },
@@ -124,16 +123,16 @@ const data = {
       url: "#",
       icon: IconSettings,
     },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
-    },
+    // {
+    //   title: "Get Help",
+    //   url: "#",
+    //   icon: IconHelp,
+    // },
+    // {
+    //   title: "Search",
+    //   url: "#",
+    //   icon: IconSearch,
+    // },
   ],
   documents: [
     {
@@ -155,6 +154,13 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const currentUser = useQuery(api.auth.currentUser);
+  const user = {
+    email: currentUser?.email ?? "sampleemail",
+    name: currentUser?.name ?? "user",
+    image: currentUser?.image ?? ""
+  };
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -162,23 +168,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
+              className="data-[slot=sidebar-menu-button]:!p-1.5 hover:bg-inherit"
             >
-              <a href="#">
-                <IconCookie className="!size-5" />
-                <span className="text-base font-semibold">Wittig 4 brownie factory</span>
-              </a>
+              <Link to="/">
+                <span className="text-base font-semibold">The Raw Codders App</span>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
+        {/* <NavDocuments items={data.documents} /> */}
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user} />
       </SidebarFooter>
     </Sidebar>
   )

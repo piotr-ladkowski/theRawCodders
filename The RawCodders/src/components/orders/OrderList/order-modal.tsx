@@ -32,7 +32,7 @@ export function OrderModal() {
   const createTransaction = useMutation(api.transactions.insertTransaction);
   
   // Fetch products to populate the dropdown
-  const products = useQuery(api.products.listProducts);
+  const products = useQuery(api.products.listProducts, { offset: 0, limit: 50 });
 
   // Combobox State
   const [open, setOpen] = useState(false);

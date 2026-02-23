@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { useAuthActions } from "@convex-dev/auth/react"
 import { useState } from "react"
 import { IconCookie } from "@tabler/icons-react"
+import { Link } from "react-router-dom"
 
 function getUserFriendlyError(error: Error | string): string {
   const message = typeof error === "string" ? error : error.message;
@@ -45,12 +46,9 @@ export default function LoginPage({className}: {className?: string}) {
     <div className="grid min-h-svh lg:grid-cols-2">
       <div className="flex flex-col gap-4 p-6 md:p-10">
         <div className="flex justify-center gap-2 md:justify-start">
-          <a href="#" className="flex justify-center tracking-tighter !font-bold items-center text-4xl gap-2 font-medium">
-            <div className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-md">
-              <IconCookie className="size-7" />
-            </div>
-            Wittiga 4
-          </a>
+          <Link to="/" className="flex justify-center tracking-tighter !font-bold items-center text-4xl gap-2 font-medium">
+            The Rawcodders App
+          </Link>
         </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-xs">

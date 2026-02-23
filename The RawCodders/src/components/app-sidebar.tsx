@@ -172,8 +172,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:!p-1.5 hover:bg-inherit"
             >
               <Link to="/">
-                <IconCookie className="!size-5" />
-                <span className="text-base font-semibold">Wittig 4 brownie factory</span>
+                <span className="text-base font-semibold">The Raw Codders App</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

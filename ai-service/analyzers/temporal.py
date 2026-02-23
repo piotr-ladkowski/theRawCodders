@@ -10,7 +10,7 @@ def analyze_temporal(data: dict[str, list[dict[str, Any]]]) -> dict:
         return {"error": "No transactions data available"}
 
     df = pd.DataFrame(transactions)
-    df["created"] = pd.to_datetime(df["date"])
+    df["created"] = pd.to_datetime(df["date"], format="mixed", utc=True)
 
     day_of_week = (
         df["created"]

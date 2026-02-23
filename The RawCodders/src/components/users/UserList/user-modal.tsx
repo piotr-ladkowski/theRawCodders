@@ -11,13 +11,14 @@ import { Field, FieldGroup } from "@/components/ui/field"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useEffect, useRef, useState } from "react"
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { useUsersContext } from "./users-context";
 
 export function UserModal() {
   const { selectedUser, setSelectedUser, editUserModalState, setEditUserModalState } = useUsersContext();
   const clearSelectedTimeoutRef = useRef<number | null>(null);
+  const currentUser = useQuery(api.auth.currentUser);
   const [role, setRole] = useState<"admin" | "user" | "manager">("user");
 
   const updateUser = useMutation(api.users.updateUser);
@@ -57,7 +58,6 @@ export function UserModal() {
       console.error("Submission failed:", error);
     }
   }
-  
   return (
     <Dialog
       open={editUserModalState}
@@ -65,8 +65,8 @@ export function UserModal() {
         setEditUserModalState(open);
         if (!open) {
           scheduleClearSelectedUser();
-        } else if (selectedUser?.role) {
-          setRole(selectedUser.role);
+        } else {
+          setRole(selectedUser?.role ?? currentUser?.role ?? "user");
         }
         
       }}
@@ -87,6 +87,7 @@ export function UserModal() {
                     <RadioGroupItem value="user" id="r1" />
                     <Label htmlFor="r1">User</Label>
                   </div>
+                
                   <div className="flex items-center gap-3">
                     <RadioGroupItem value="manager" id="r2" />
                     <Label htmlFor="r2">Manager</Label>

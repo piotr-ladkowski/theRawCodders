@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import { createContext, useContext } from "react";
 import type { ReactNode, Dispatch, SetStateAction } from "react";
 import type { TUser } from "./columns";
 
@@ -22,4 +22,12 @@ export function UsersProvider({
   return (
     <UsersContext.Provider value={value}>{children}</UsersContext.Provider>
   );
+}
+
+export function useUsersContext() {
+  const context = useContext(UsersContext);
+  if (!context) {
+    throw new Error("useUsersContext must be used within UsersProvider");
+  }
+  return context;
 }

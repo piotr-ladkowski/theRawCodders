@@ -99,6 +99,7 @@ export const listProducts = query({
         let products = await ctx.db.query('products').collect();
 
         const offset = args.offset ?? 0;
+        const limit = args.limit ?? 50;
         if (args.limit !== undefined) {
             return products.slice(offset, offset + args.limit);
         }

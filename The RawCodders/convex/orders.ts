@@ -11,7 +11,7 @@ export const listOrders = query({
         const allOrders = await ctx.db.query("orders").order("desc").collect();
         
         const offset = args.offset ?? 0;
-        const limit = args.limit ?? allOrders.length;
+        const limit = args.limit ?? 50;
         
         return {
             data: allOrders.slice(offset, offset + limit),

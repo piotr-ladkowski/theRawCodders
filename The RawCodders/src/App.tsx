@@ -8,6 +8,7 @@ import Transactions from "./components/transactions/Transactions";
 import Products from "./components/products/Products";
 import Clients from "./components/clients/Clients";
 import Returns from "./components/returns/Returns";
+import ClientDetail from "./components/client_detail/Client_detail";
 import LoginPage from "./components/login-form";
 import LandingLayout from "./landing-page/LandingLayout";
 import LandingPage from "./landing-page/LandingPage";
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="orders" element={<Orders />} />
           <Route path="products" element={<Products />} />
           <Route path="clients" element={<Clients />} />
+          <Route path="clients/:clientId" element={<ClientDetail />} />
           <Route path="returns" element={<Returns />} />
         </Route>
 

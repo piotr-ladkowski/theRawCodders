@@ -2,9 +2,19 @@ import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 
 export const listClients = query({
-    args: {},
-    handler: async (ctx) => {
-        return await ctx.db.query("clients").collect();
+    args: {
+        limit: v.optional(v.number()),
+        offset: v.optional(v.number()),
+    },
+    handler: async (ctx, args) => {
+        let clients = await ctx.db.query("clients").collect();
+
+        const offset = args.offset ?? 0;
+        if (args.limit !== undefined) {
+            return clients.slice(offset, offset + args.limit);
+        }
+        
+        return clients.slice(offset);
     },
 });
 

@@ -86,7 +86,8 @@ export function OrderModal() {
           clientId: "jx7547q51txvpssfavt9bvtwvn81kh59" as Id<"clients">, //TODO
           status: "pending", // Default status
           discount: 0,       // Default discount
-          orderId: [],       // Empty array to start
+          orderId: [],       // Empty array to start,
+          date: "21:00:00 18-12-2024"
         });
 
         await createOrder({

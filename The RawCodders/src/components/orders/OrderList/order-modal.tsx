@@ -87,7 +87,7 @@ export function OrderModal() {
           status: "pending", // Default status
           discount: 0,       // Default discount
           orderId: [],       // Empty array to start,
-          date: "21:00:00 18-12-2024"
+          date: new Date().toISOString()
         });
 
         await createOrder({

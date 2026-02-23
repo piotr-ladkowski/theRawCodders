@@ -48,7 +48,8 @@ export default defineSchema({
     status: TransactionStatus,
     totalPrice: v.float64(),
     discount: v.float64(),
-    orderId: v.array(v.id("orders"))
+    orderId: v.array(v.id("orders")),
+    date: v.string(),
   }).index("by_clientId", ["clientId"]),
 
   orders: defineTable({

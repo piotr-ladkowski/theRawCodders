@@ -10,6 +10,7 @@ export const listClients = query({
         let clients = await ctx.db.query("clients").collect();
 
         const offset = args.offset ?? 0;
+        const limit = args.limit ?? 50;
         if (args.limit !== undefined) {
             return clients.slice(offset, offset + args.limit);
         }

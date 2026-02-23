@@ -17,6 +17,7 @@ export const listReturns = query({
         let returns = await ctx.db.query("returns").collect();
 
         const offset = args.offset ?? 0;
+        const limit = args.limit ?? 50;
         if (args.limit !== undefined) {
             return returns.slice(offset, offset + args.limit);
         }

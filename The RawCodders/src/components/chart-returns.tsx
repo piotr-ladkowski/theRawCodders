@@ -54,7 +54,9 @@ export function ReturnsDashboard() {
     const groupedData: Record<string, { date: string; returns: number }> = {}
 
     returnsWithDates.forEach((ret) => {
-      const dateStr = ret.date ? ret.date.split("T")[0] : new Date().toISOString().split("T")[0]
+      if (!ret.date) return
+
+      const dateStr = ret.date.split("T")[0]
 
       if (!groupedData[dateStr]) {
         groupedData[dateStr] = { date: dateStr, returns: 0 }

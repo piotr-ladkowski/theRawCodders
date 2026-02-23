@@ -118,8 +118,10 @@ export const getClientDetailStats = query({
         for (const tx of transactions) {
             if (tx.status === "completed") {
                 totalSpending += tx.totalPrice;
-                const date = tx.date ? tx.date.split("T")[0] : new Date().toISOString().split("T")[0];
-                spendingByDate[date] = (spendingByDate[date] || 0) + tx.totalPrice;
+                if (tx.date) {
+                    const date = tx.date.split("T")[0];
+                    spendingByDate[date] = (spendingByDate[date] || 0) + tx.totalPrice;
+                }
             }
 
             for (const orderId of tx.orderId) {

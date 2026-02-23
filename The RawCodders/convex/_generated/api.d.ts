@@ -11,6 +11,7 @@
 import type * as auth from "../auth.js";
 import type * as clients from "../clients.js";
 import type * as http from "../http.js";
+import type * as insights from "../insights.js";
 import type * as myFunctions from "../myFunctions.js";
 import type * as orders from "../orders.js";
 import type * as products from "../products.js";
@@ -28,6 +29,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   clients: typeof clients;
   http: typeof http;
+  insights: typeof insights;
   myFunctions: typeof myFunctions;
   orders: typeof orders;
   products: typeof products;

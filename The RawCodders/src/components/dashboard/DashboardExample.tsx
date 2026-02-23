@@ -1,5 +1,5 @@
 import { TransactionDashboard } from "@/components/chart-area-interactive"
-import { DataTable } from "@/components/data-table"
+//import { DataTable } from "@/components/data-table"
 import { SectionCards } from "@/components/section-cards"
 
 import data from "./data.json"
@@ -12,8 +12,7 @@ const DashboardExample = () => {
                     <SectionCards />
                     <div className="px-4 lg:px-6">
                         <TransactionDashboard />
-                    </div>
-                    <DataTable data={data} />
+                    </div>                    
                     </div>
                 </div>
             </div>

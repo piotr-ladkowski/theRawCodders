@@ -10,7 +10,6 @@ import {
   IconReport,
   IconSettings,
   IconUsers,
-  IconCookie,
   IconShoppingCart,
   IconAssembly,
   IconTruckReturn

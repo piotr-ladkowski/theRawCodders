@@ -9,7 +9,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { useAuthActions } from "@convex-dev/auth/react"
 import { useState } from "react"
-import { IconCookie } from "@tabler/icons-react"
 import { Link } from "react-router-dom"
 
 function getUserFriendlyError(error: Error | string): string {

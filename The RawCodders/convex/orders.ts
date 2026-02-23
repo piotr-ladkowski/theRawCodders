@@ -3,9 +3,20 @@ import { query, mutation } from "./_generated/server";
 import { recalculateTransaction } from "./transactions";
 
 export const listOrders = query({
-    args: {},
-    handler: async (ctx) => {
-        return await ctx.db.query("orders").collect();
+    args: {
+        limit: v.optional(v.number()),
+        offset: v.optional(v.number()),
+    },
+    handler: async (ctx, args) => {
+        const allOrders = await ctx.db.query("orders").order("desc").collect();
+        
+        const offset = args.offset ?? 0;
+        const limit = args.limit ?? allOrders.length;
+        
+        return {
+            data: allOrders.slice(offset, offset + limit),
+            total: allOrders.length,
+        };
     },
 });
 
@@ -21,28 +32,50 @@ export const getOrder = query({
 export const getOrdersByTransaction = query({
     args: {
         transactionId: v.id("transactions"),
+        limit: v.optional(v.number()),
+        offset: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-        return await ctx.db
+        const allOrders = await ctx.db
             .query("orders")
             .withIndex("by_transactionId", (q) =>
                 q.eq("transactionId", args.transactionId),
             )
+            .order("desc")
             .collect();
+
+        const offset = args.offset ?? 0;
+        const limit = args.limit ?? allOrders.length;
+        
+        return {
+            data: allOrders.slice(offset, offset + limit),
+            total: allOrders.length,
+        };
     },
 });
 
 export const getOrdersByProduct = query({
     args: {
         productId: v.id("products"),
+        limit: v.optional(v.number()),
+        offset: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-        return await ctx.db
+        const allOrders = await ctx.db
             .query("orders")
             .withIndex("by_productId", (q) =>
                 q.eq("productId", args.productId),
             )
+            .order("desc")
             .collect();
+
+        const offset = args.offset ?? 0;
+        const limit = args.limit ?? allOrders.length;
+        
+        return {
+            data: allOrders.slice(offset, offset + limit),
+            total: allOrders.length,
+        };
     },
 });
 

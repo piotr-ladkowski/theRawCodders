@@ -1,10 +1,12 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { recalculateTransaction } from "./transactions";
+import { requireAdminOrManager } from "./roleUtils";
 
 export const listOrders = query({
     args: {},
     handler: async (ctx) => {
+        await requireAdminOrManager(ctx);
         return await ctx.db.query("orders").collect();
     },
 });
@@ -14,6 +16,7 @@ export const getOrder = query({
         orderId: v.id("orders"),
     },
     handler: async (ctx, args) => {
+        await requireAdminOrManager(ctx);
         return await ctx.db.get(args.orderId);
     },
 });
@@ -23,6 +26,7 @@ export const getOrdersByTransaction = query({
         transactionId: v.id("transactions"),
     },
     handler: async (ctx, args) => {
+        await requireAdminOrManager(ctx);
         return await ctx.db
             .query("orders")
             .withIndex("by_transactionId", (q) =>
@@ -37,6 +41,7 @@ export const getOrdersByProduct = query({
         productId: v.id("products"),
     },
     handler: async (ctx, args) => {
+        await requireAdminOrManager(ctx);
         return await ctx.db
             .query("orders")
             .withIndex("by_productId", (q) =>
@@ -53,6 +58,7 @@ export const insertOrder = mutation({
         quantity: v.number(),
     },
     handler: async (ctx, args) => {
+        await requireAdminOrManager(ctx);
         const product = await ctx.db.get(args.productId);
         if (!product) throw new Error("Product not found");
 
@@ -81,6 +87,7 @@ export const updateOrder = mutation({
         quantity: v.float64(),
     },
     handler: async (ctx, args) => {
+        await requireAdminOrManager(ctx);
 
         const order = await ctx.db.get(args.orderId);
         if (!order) throw new Error("Order not found");
@@ -109,6 +116,7 @@ export const deleteOrder = mutation({
         orderId: v.id("orders"),
     },
     handler: async (ctx, args) => {
+        await requireAdminOrManager(ctx);
         const order = await ctx.db.get(args.orderId);
         if (order) {
             const product = await ctx.db.get(order.productId);

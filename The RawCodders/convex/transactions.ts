@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation, MutationCtx } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import { requireAdminOrManager } from "./roleUtils";
 
 const TransactionStatus = v.union(
   v.literal("pending"),
@@ -39,6 +40,7 @@ export async function recalculateTransaction(ctx: MutationCtx, transactionId: Id
 export const listTransactions = query({
     args: {},
     handler: async (ctx) => {
+        await requireAdminOrManager(ctx);
         const transactions = await ctx.db.query("transactions").collect();
         
         return await Promise.all(
@@ -58,6 +60,7 @@ export const getTransaction = query({
         transactionId: v.id("transactions"),
     },
     handler: async (ctx, args) => {
+        await requireAdminOrManager(ctx);
         return await ctx.db.get(args.transactionId);
     },
 });
@@ -67,6 +70,7 @@ export const getTransactionsByClient = query({
         clientId: v.id("clients"),
     },
     handler: async (ctx, args) => {
+        await requireAdminOrManager(ctx);
         return await ctx.db
             .query("transactions")
             .withIndex("by_clientId", (q) => q.eq("clientId", args.clientId))
@@ -83,6 +87,7 @@ export const insertTransaction = mutation({
         date: v.string()
     },
     handler: async (ctx, args) => {
+        await requireAdminOrManager(ctx);
         // total price to be calculated
         const totalPrice = 0
         
@@ -105,7 +110,8 @@ export const updateTransaction = mutation({
         discount: v.float64(),
         date: v.optional(v.string())
     },
-    handler: async (ctx, args) => {    
+    handler: async (ctx, args) => {
+        await requireAdminOrManager(ctx);    
     const patchData: any = {
         clientId: args.clientId,
         status: args.status, 
@@ -129,6 +135,7 @@ export const updateTransactionStatus = mutation({
         status: TransactionStatus,
     },
     handler: async (ctx, args) => {
+        await requireAdminOrManager(ctx);
         await ctx.db.patch(args.transactionId, { status: args.status });
         return args.transactionId;
     },
@@ -140,6 +147,7 @@ export const addOrderToTransaction = mutation({
         orderId: v.id("orders"),
     },
     handler: async (ctx, args) => {
+        await requireAdminOrManager(ctx);
         const transaction = await ctx.db.get(args.transactionId);
         if (!transaction) throw new Error("Transaction not found");
 
@@ -160,6 +168,7 @@ export const deleteTransaction = mutation({
         transactionId: v.id("transactions"),
     },
     handler: async (ctx, args) => {
+        await requireAdminOrManager(ctx);
         await ctx.db.delete(args.transactionId);
     },
 });

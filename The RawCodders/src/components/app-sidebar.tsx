@@ -12,7 +12,8 @@ import {
   IconUsers,
   IconShoppingCart,
   IconAssembly,
-  IconTruckReturn
+  IconTruckReturn,
+  IconUserCircle
 } from "@tabler/icons-react"
 import { useQuery } from "convex/react"
 import { api } from "../../convex/_generated/api"
@@ -68,6 +69,11 @@ const data = {
       url: "/dashboard/returns",
       icon: IconTruckReturn,
     },
+    {
+      title: "Users",
+      url: "/dashboard/users",
+      icon: IconUserCircle
+    }
   ],
   navClouds: [
     {
@@ -157,7 +163,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const currentUser = useQuery(api.auth.currentUser);
   const user = {
     email: currentUser?.email ?? "sampleemail",
-    name: currentUser?.name ?? "user",
+    name: currentUser?.role ?? "user",
     image: currentUser?.image ?? ""
   };
 

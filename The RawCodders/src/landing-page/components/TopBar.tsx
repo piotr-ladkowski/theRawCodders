@@ -2,8 +2,18 @@ import { IconArrowNarrowRight } from "@tabler/icons-react";
 import TopBarMenu from "./TopBarMenu";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { useAuthActions } from "@convex-dev/auth/react";
 
 export default function TopBar() {
+    const currentUser = useQuery(api.auth.currentUser);
+    const { signOut } = useAuthActions();
+    
+    const userRole = currentUser?.role || "user";
+    const isLoggedIn = currentUser !== null && currentUser !== undefined;
+    const canAccessDashboard = isLoggedIn && (userRole === "admin" || userRole === "manager");
+
     return(
         <div className="flex flex-col bg-white">
             <div className="flex sticky top-0 flex-row h-15  text-cyan-500 justify-between items-center">
@@ -18,12 +28,28 @@ export default function TopBar() {
                     </div>
                 </div>
                 <div className="mr-5">
-                    <Link to="/dashboard/main">
-                        <Button className="!bg-cyan-500 hover:!bg-violet-600 rounded-none hover:cursor-pointer">
-                            Go to dashboard
-                            <IconArrowNarrowRight/>
+                    {!isLoggedIn ? (
+                        <Link to="/dashboard/main">
+                            <Button className="!bg-cyan-500 hover:!bg-violet-600 rounded-none hover:cursor-pointer">
+                                Login
+                                <IconArrowNarrowRight/>
+                            </Button>
+                        </Link>
+                    ) : canAccessDashboard ? (
+                        <Link to="/dashboard/main">
+                            <Button className="!bg-cyan-500 hover:!bg-violet-600 rounded-none hover:cursor-pointer">
+                                Go to dashboard
+                                <IconArrowNarrowRight/>
+                            </Button>
+                        </Link>
+                    ) : (
+                        <Button 
+                            onClick={() => void signOut()}
+                            className="!bg-cyan-500 hover:!bg-violet-600 rounded-none hover:cursor-pointer"
+                        >
+                            Logout
                         </Button>
-                    </Link>
+                    )}
                 </div>
             </div>
             <div className="flex md:hidden justify-center mb-3">

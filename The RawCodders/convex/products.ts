@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { requireAdminOrManager } from "./roleUtils";
 
 
 export const insertProduct = mutation({
@@ -13,6 +14,7 @@ export const insertProduct = mutation({
     },
 
     handler: async (ctx, args) => {
+        await requireAdminOrManager(ctx);
         if (args.product.stock < 0) {
             throw new Error("Initial stock cannot be less than 0");
         }
@@ -30,6 +32,7 @@ export const updateProductStock = mutation({
     },
 
     handler: async (ctx, args) => {
+        await requireAdminOrManager(ctx);
         const { productId } = args;
     
         const product = await ctx.db.get(args.productId)
@@ -54,6 +57,7 @@ export const updateProductStock = mutation({
 export const listProducts = query({
     args: {},
     handler: async (ctx) => {
+        await requireAdminOrManager(ctx);
         return await ctx.db.query('products').collect()
     },
 })
@@ -65,6 +69,7 @@ export const getProduct = query({
     },
 
     handler: async (ctx, args) => {
+        await requireAdminOrManager(ctx);
         const product = await ctx.db.get(args.productId)
         return product
     },
@@ -76,6 +81,7 @@ export const deleteProduct = mutation({
         productId: v.id("products"),
     },
     handler: async (ctx, args) => {
+        await requireAdminOrManager(ctx);
         await ctx.db.delete(args.productId);
     },
 });

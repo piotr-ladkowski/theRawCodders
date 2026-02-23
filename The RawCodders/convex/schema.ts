@@ -17,6 +17,15 @@ export const TransactionStatus = v.union(
 
 export default defineSchema({
   ...authTables,
+  users: defineTable({
+    ...authTables.users.validator.fields,
+    role: v.optional(v.union(
+      v.literal("admin"),
+      v.literal("user"),
+      v.literal("manager")
+    )),
+  })
+    .index("email", ["email"]),
 
   products: defineTable({
     name: v.string(),

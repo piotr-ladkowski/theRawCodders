@@ -1,9 +1,11 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { requireAdminOrManager } from "./roleUtils";
 
 export const listClients = query({
     args: {},
     handler: async (ctx) => {
+        await requireAdminOrManager(ctx);
         return await ctx.db.query("clients").collect();
     },
 });
@@ -13,6 +15,7 @@ export const getClient = query({
         clientId: v.id("clients"),
     },
     handler: async (ctx, args) => {
+        await requireAdminOrManager(ctx);
         return await ctx.db.get(args.clientId);
     },
 });
@@ -22,6 +25,7 @@ export const getClientByEmail = query({
         email: v.string(),
     },
     handler: async (ctx, args) => {
+        await requireAdminOrManager(ctx);
         return await ctx.db
             .query("clients")
             .withIndex("by_email", (q) => q.eq("email", args.email))
@@ -34,6 +38,7 @@ export const getClientByName = query({
         name: v.string(),
     },
     handler: async (ctx, args) => {
+        await requireAdminOrManager(ctx);
         return await ctx.db
             .query("clients")
             .withIndex("by_name", (q) => q.eq("name", args.name))
@@ -57,6 +62,7 @@ export const insertClient = mutation({
         })
     },
     handler: async (ctx, args) => {
+        await requireAdminOrManager(ctx);
         return await ctx.db.insert("clients", {
             name: args.name,
             email: args.email,
@@ -85,6 +91,7 @@ export const updateClient = mutation({
         }))
     },
     handler: async (ctx, args) => {
+        await requireAdminOrManager(ctx);
         const { clientId, ...fields } = args;
         await ctx.db.patch(clientId, fields);
         return clientId;
@@ -96,6 +103,7 @@ export const deleteClient = mutation({
         clientId: v.id("clients"),
     },
     handler: async (ctx, args) => {
+        await requireAdminOrManager(ctx);
         await ctx.db.delete(args.clientId);
     },
 });

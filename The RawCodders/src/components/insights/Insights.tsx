@@ -19,7 +19,7 @@ import {
 } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 
-const AI_SERVICE_URL = "http://localhost:8000"
+const AI_SERVICE_URL = import.meta.env.VITE_AI_SERVICE_URL
 
 interface InsightsData {
   executive_summary: string

@@ -40,7 +40,7 @@ export function OrderModal() {
   const selectedProductId = selectedOrder?.productId as Id<"products"> | undefined;
 
   // Filter products based on search input
-  const filteredProducts = products?.filter((product) =>
+  const filteredProducts = products?.data.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -137,7 +137,7 @@ export function OrderModal() {
                       className="w-full justify-between font-normal"
                     >
                       {selectedProductId && products
-                        ? products.find((p) => p._id === selectedProductId)?.name
+                        ? products.data.find((p) => p._id === selectedProductId)?.name
                         : "Select a product..."}
                       <IconChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>

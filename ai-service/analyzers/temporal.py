@@ -34,3 +34,4 @@ def analyze_temporal(data: dict[str, list[dict[str, Any]]]) -> dict:
         "transactions_by_month": monthly,
         "total_transactions": len(df),
     }
+ 

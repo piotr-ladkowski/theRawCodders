@@ -73,6 +73,7 @@ export function TransactionModal() {
           status: commonData.status, 
           discount: commonData.discount,       
           orderId: [],       
+          date: new Date().toLocaleDateString()
         });
       }
       setEditTransactionModalState(false); 

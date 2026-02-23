@@ -10,7 +10,7 @@ import { Spinner } from "../ui/spinner";
 
 
 export default function Products() {
-  const products = useQuery(api.products.listProducts);
+  const products = useQuery(api.products.listProducts, { offset: 0, limit: 50 });
   const [selectedProduct, setSelectedProduct] = useState<TProduct>();
   const [editProductModalState, setEditProductModalState] = useState<boolean>(false);
 

@@ -9,7 +9,7 @@ import { TransactionsProvider } from "./TransactionList/transactions-context";
 import { Spinner } from "../ui/spinner";
 
 export default function Orders(){
-    const transactions = useQuery(api.transactions.listTransactions);
+    const transactions = useQuery(api.transactions.listTransactions, { offset: 0, limit: 50 });
     const [selectedTransaction, setSelectedTransaction] = useState<TTransaction>();
     const [editTransactionModalState, setEditTransactionModalState] = useState<boolean>(false);
     

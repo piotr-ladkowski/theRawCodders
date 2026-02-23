@@ -45,7 +45,7 @@ def analyze_demographics(data: dict[str, list[dict[str, Any]]]) -> dict:
         mann_whitney_result = {
             "statistic": float(stat),
             "p_value": float(pvalue),
-            "significant": pvalue < 0.05,
+            "significant": bool(pvalue < 0.05),
         }
 
     # Spending by age group

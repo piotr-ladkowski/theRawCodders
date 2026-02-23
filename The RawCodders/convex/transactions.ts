@@ -39,7 +39,17 @@ export async function recalculateTransaction(ctx: MutationCtx, transactionId: Id
 export const listTransactions = query({
     args: {},
     handler: async (ctx) => {
-        return await ctx.db.query("transactions").collect();
+        const transactions = await ctx.db.query("transactions").collect();
+        
+        return await Promise.all(
+            transactions.map(async (transaction) => {
+                const client = await ctx.db.get(transaction.clientId);
+                return {
+                    ...transaction,
+                    clientName: client ? client.name : "Unknown Client",
+                };
+            })
+        );
     },
 });
 

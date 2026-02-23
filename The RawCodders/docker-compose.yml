@@ -100,7 +100,7 @@ services:
     env_file:
       - .env.local
     ports:
-      - "${AI_SERVICE_PORT:-8022}:8000"
+      - "${AI_SERVICE_PORT:-18020}:8000"
     environment:
       - CONVEX_URL=http://backend:${PORT:-3210} 
     depends_on:

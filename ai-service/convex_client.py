@@ -17,7 +17,15 @@ async def _fetch_table(client: httpx.AsyncClient, function_path: str) -> list[di
     )
     resp.raise_for_status()
     data = resp.json()
-    return data.get("value", data) if isinstance(data, dict) else data
+    # Unwrap Convex response: {"status":"success","value":[...]} or {"status":"success","value":{"data":[...]}}
+    if isinstance(data, dict):
+        value = data.get("value", data)
+        if isinstance(value, dict) and "data" in value:
+            return value["data"]
+        if isinstance(value, list):
+            return value
+        return value
+    return data
 
 
 TABLES = {

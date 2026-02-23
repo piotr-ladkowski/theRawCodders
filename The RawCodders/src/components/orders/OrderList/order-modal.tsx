@@ -24,7 +24,7 @@ import { useOrdersContext } from "./orders-context";
 import { Id } from "../../../../convex/_generated/dataModel";
 
 export function OrderModal() {
-  const { selectedOrder, setSelectedOrder, editOrderModalState, setEditOrderModalState } = useOrdersContext();
+  const { selectedOrder, setSelectedOrder, editOrderModalState, setEditOrderModalState, modalObserver, setModalObserver  } = useOrdersContext();
   const clearSelectedTimeoutRef = useRef<number | null>(null);
 
   const createOrder = useMutation(api.orders.insertOrder);
@@ -66,7 +66,7 @@ export function OrderModal() {
     const formData = new FormData(event.currentTarget);
 
     if (!selectedProductId) {
-      console.error("Please select a product");
+      //console.error("Please select a product");
       return;
     }
 
@@ -75,31 +75,32 @@ export function OrderModal() {
       quantity: Number(formData.get("quantity"))
     };
 
-    try {
-      if (selectedOrder?._id) {
-        await updateOrder({
-          orderId: selectedOrder._id,
-          ...commonData,
-        });
-      } else {
-        const newTransactionId = await createTransaction({
-          clientId: "jx7547q51txvpssfavt9bvtwvn81kh59" as Id<"clients">, //TODO
-          status: "pending", // Default status
-          discount: 0,       // Default discount
-          orderId: [],       // Empty array to start,
-          date: new Date().toISOString()
-        });
+    
+    if (selectedOrder?._id) {
+      await updateOrder({
+        orderId: selectedOrder._id,
+        ...commonData,
+      });
+    } else {
+      const newTransactionId = await createTransaction({
+        clientId: "jx7547q51txvpssfavt9bvtwvn81kh59" as Id<"clients">, //TODO
+        status: "pending", // Default status
+        discount: 0,       // Default discount
+        orderId: [],       // Empty array to start,
+        date: new Date().toISOString()
+      });
 
-        await createOrder({
-          ...commonData,
-          transactionId: newTransactionId 
-        });
-      }
-      setEditOrderModalState(false); 
-      scheduleClearSelectedOrder();
-    } catch (error) {
-      console.error("Submission failed:", error);
+      await createOrder({
+        ...commonData,
+        transactionId: newTransactionId 
+      });
     }
+    // Wait for backend to process before refetching
+    await new Promise(resolve => setTimeout(resolve, 500));
+    setModalObserver((prev) => (prev + 1) % 1000);
+    setEditOrderModalState(false); 
+    scheduleClearSelectedOrder();
+    
   }
   
   return (
@@ -108,6 +109,7 @@ export function OrderModal() {
       onOpenChange={(open) => {
         setEditOrderModalState(open);
         if (!open) {
+
           scheduleClearSelectedOrder();
         }
       }}

@@ -7,6 +7,7 @@ type ProductsContextValue = {
   setSelectedProduct: Dispatch<SetStateAction<TProduct | undefined>>;
   editProductModalState: boolean
   setEditProductModalState: Dispatch<SetStateAction<boolean>>
+  setModalObserver: Dispatch<SetStateAction<number>>
 };
 
 const ProductsContext = createContext<ProductsContextValue | null>(null);

@@ -35,9 +35,20 @@ import {
 
 import { Button } from "@/components/ui/button"
 
+import { 
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue, 
+} from "@/components/ui/select"
+
+import { Label } from "@/components/ui/label"
+
 import { IconAddressBook, IconDotsVertical } from "@tabler/icons-react"
 
-
+import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,16 +61,29 @@ import type { TProduct } from "./columns"
 
 import { api } from "../../../../convex/_generated/api"
 import { useMutation } from "convex/react"
-import { useState } from "react"
+import { useState, Dispatch, SetStateAction } from "react"
+
+
+
+
+type TPageSettings = {
+  currentPage: number,
+  docCount: number,
+  setCurrentPage: Dispatch<SetStateAction<number>>,
+  setDocCount: Dispatch<SetStateAction<number>>,
+  tableSize: number
+}
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
+  pageSettings: TPageSettings
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  pageSettings
 }: DataTableProps<TData, TValue>) {
   const { setSelectedProduct, setEditProductModalState } = useProductsContext()
   const deleteProductMutation = useMutation(api.products.deleteProduct)
@@ -114,6 +138,32 @@ export function DataTable<TData, TValue>({
 
   }
 
+  function PaginationControl({className}: {className?: string}) {
+    return (
+      <div className={"flex items-center justify-end space-x-2 py-4 " + className}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => pageSettings.setCurrentPage(pageSettings.currentPage - 1)}
+          disabled={pageSettings.currentPage < 2}
+        >
+          <IconChevronLeft />
+        </Button>
+        <div>
+          {`${pageSettings.currentPage} / ${Math.floor(pageSettings.tableSize/pageSettings.docCount) + Number(!!(pageSettings.tableSize%pageSettings.docCount))}`}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => pageSettings.setCurrentPage(pageSettings.currentPage + 1)}
+          disabled={ pageSettings.currentPage >= Math.floor(pageSettings.tableSize/pageSettings.docCount) + Number(!!(pageSettings.tableSize%pageSettings.docCount)) }
+        >
+          <IconChevronRight />
+        </Button>
+      </div>
+    )
+  }
+
 
   function RenderObject(object: object, accessorKey: string, Product: TProduct) {
     const obj = object as Record<string, any>;
@@ -149,56 +199,82 @@ export function DataTable<TData, TValue>({
 
 
   return (
-    <div className="overflow-hidden text-center rounded-md border">
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => {
-                return (
-                  <TableHead className="text-center" key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                )
-              })}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                data-state={row.getIsSelected() && "selected"}
-              >
-                {row.getVisibleCells().map((cell) => {
-                  const accessorKey = cell.column.id
-
+    <>
+      <div className="flex items-center !justify-between gap-2 my-4">
+        <div className="flex flex-row items-center gap-2">
+          <Label className="mb-0">Items per page:</Label>
+          <Select
+            value={String(pageSettings.docCount)}
+            onValueChange={(value) => {pageSettings.setDocCount(Number(value)); pageSettings.setCurrentPage(1)}}
+          >
+            <SelectTrigger className="w-[80px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup >
+                <SelectItem value="15">15</SelectItem>
+                <SelectItem value="30">30</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="70">70</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+        <PaginationControl className="flex flex-row justify-end" />
+      </div>
+      <div className="overflow-hidden text-center rounded-md border">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
                   return (
-                    <TableCell key={cell.id}>
-                      {cell.getValue() !== null && (accessorKey === "action" )
-                        ?  RenderObject(cell.getValue() as object, accessorKey, row.original as TProduct)
-                        : flexRender(cell.column.columnDef.cell, cell.getContext()) 
-                       }
-                    </TableCell>
+                    <TableHead className="text-center" key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
                   )
                 })}
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
-                No results.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </div>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
+                  {row.getVisibleCells().map((cell) => {
+                    const accessorKey = cell.column.id
+
+                    return (
+                      <TableCell key={cell.id}>
+                        {cell.getValue() !== null && (accessorKey === "action" )
+                          ?  RenderObject(cell.getValue() as object, accessorKey, row.original as TProduct)
+                          : flexRender(cell.column.columnDef.cell, cell.getContext()) 
+                        }
+                      </TableCell>
+                    )
+                  })}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                  No results.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      <PaginationControl />
+    </>
   )
 }

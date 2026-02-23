@@ -138,7 +138,7 @@ function MetricCards({
 }: {
   metrics: InsightsData["raw_metrics"]
 }) {
-  const { temporal, demographics, transactions, products, returns } = metrics
+  const {demographics, transactions, returns } = metrics
 
   const cards = [
     {

@@ -102,7 +102,7 @@ export const listProducts = query({
         const limit = args.limit ?? 50;
         
         return { 
-            data: products.slice(offset, offset + limit),
+            data: limit === -1 ? products : products.slice(offset, offset + limit),
             total: products.length
         }
     },

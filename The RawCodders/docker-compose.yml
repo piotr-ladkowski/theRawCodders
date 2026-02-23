@@ -60,7 +60,6 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-    # Removed hardcoded command to allow GitHub Actions to orchestrate the step natively
 
   dashboard:
     image: ghcr.io/get-convex/convex-dashboard:latest
@@ -89,6 +88,21 @@ services:
       - .env.local
     ports:
       - "${FRONTEND_PORT:-5173}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # NEW AI MICROSERVICE
+  ai-service:
+    build:
+      context: ../ai-service
+      dockerfile: Dockerfile 
+    env_file:
+      - .env.local
+    ports:
+      - "${AI_SERVICE_PORT:-8000}:8000"
+    environment:
+      - CONVEX_URL=http://backend:${PORT:-3210} 
     depends_on:
       backend:
         condition: service_healthy

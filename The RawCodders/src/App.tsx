@@ -1,7 +1,7 @@
 
 import { Authenticated, Unauthenticated } from "convex/react";
 import MainLayout from "./MainLayout";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import DashboardExample from "./components/dashboard/DashboardExample";
 import Orders from "./components/orders/Orders";
 import Transactions from "./components/transactions/Transactions";
@@ -11,6 +11,8 @@ import Returns from "./components/returns/Returns";
 import LoginPage from "./components/login-form";
 import LandingLayout from "./landing-page/LandingLayout";
 import LandingPage from "./landing-page/LandingPage";
+import AboutUsPage from "./landing-page/AboutUsPage";
+import ProductsPage from "./landing-page/ProductsPage";
 
 export default function App() {
   return (
@@ -30,6 +32,7 @@ export default function App() {
             </>
           }
         >
+          <Route index element={<Navigate to="/dashboard/main" replace />} />
           <Route path="main" element={<DashboardExample />} />
           <Route path="transactions" element={<Transactions />} />
           <Route path="orders" element={<Orders />} />
@@ -41,7 +44,8 @@ export default function App() {
         {/* Landing routes - root and everything except /dashboard */}
         <Route path="/*" element={<LandingLayout />}>
           <Route index element={<LandingPage />} />
-          <Route path="about-us" element={<LandingPage />} />
+          <Route path="about-us" element={<AboutUsPage />} />
+          <Route path="products" element={<ProductsPage />}/>
           <Route path="*" element={<LandingPage />} />
         </Route>
       </Routes>

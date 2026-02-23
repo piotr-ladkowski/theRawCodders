@@ -24,7 +24,7 @@ import { useOrdersContext } from "./orders-context";
 import { Id } from "../../../../convex/_generated/dataModel";
 
 export function OrderModal() {
-  const { selectedOrder, setSelectedOrder, editOrderModalState, setEditOrderModalState, modalObserver, setModalObserver  } = useOrdersContext();
+  const { selectedOrder, setSelectedOrder, editOrderModalState, setEditOrderModalState, setModalObserver  } = useOrdersContext();
   const clearSelectedTimeoutRef = useRef<number | null>(null);
 
   const createOrder = useMutation(api.orders.insertOrder);
@@ -32,7 +32,7 @@ export function OrderModal() {
   const createTransaction = useMutation(api.transactions.insertTransaction);
   
   // Fetch products to populate the dropdown
-  const products = useQuery(api.products.listProducts, { offset: 0, limit: 50 });
+  const products = useQuery(api.products.listProducts, { offset: 0, limit: -1 });
 
   // Combobox State
   const [open, setOpen] = useState(false);

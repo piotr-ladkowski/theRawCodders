@@ -69,7 +69,8 @@ export const insertTransaction = mutation({
         clientId: v.id("clients"),
         status: TransactionStatus,
         discount: v.float64(),
-        orderId: v.array(v.id("orders"))
+        orderId: v.array(v.id("orders")), 
+        date: v.string()
     },
     handler: async (ctx, args) => {
         // total price to be calculated
@@ -80,7 +81,8 @@ export const insertTransaction = mutation({
             status: args.status,
             totalPrice: totalPrice,
             discount: args.discount,
-            orderId: args.orderId
+            orderId: args.orderId, 
+            date: args.date
         });
     },
 });
@@ -91,17 +93,24 @@ export const updateTransaction = mutation({
         clientId: v.id("clients"),
         status: TransactionStatus,
         discount: v.float64(),
+        date: v.optional(v.string())
     },
-    handler: async (ctx, args) => {
-        await ctx.db.patch(args.transactionId, { 
-            clientId: args.clientId,
-            status: args.status, 
-            discount: args.discount 
-        });
-        
-        await recalculateTransaction(ctx, args.transactionId);
-        return args.transactionId;
-    },
+    handler: async (ctx, args) => {    
+    const patchData: any = {
+        clientId: args.clientId,
+        status: args.status, 
+        discount: args.discount 
+    };
+    
+    if (args.date !== undefined) {
+        patchData.date = args.date;
+    }
+
+    await ctx.db.patch(args.transactionId, patchData);
+    
+    await recalculateTransaction(ctx, args.transactionId);
+    return args.transactionId;
+},
 });
 
 export const updateTransactionStatus = mutation({

@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/toggle-group"
 
 const chartConfig = {
-  returns: { label: "Returns", color: "hsl(var(--chart-5))" },
+  returns: { label: "Returns", color: "var(--accent)" },
 } satisfies ChartConfig
 
 export function ReturnsDashboard() {

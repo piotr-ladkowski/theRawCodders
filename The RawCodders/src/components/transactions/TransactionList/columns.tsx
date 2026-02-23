@@ -49,7 +49,7 @@ const TransactionOrdersCell = ({ transaction }: { transaction: TTransaction }) =
             <p className="text-sm text-muted-foreground text-center p-4">No orders found for this transaction.</p>
           ) : (
             orders.map((order) => {
-              const product = products?.find((p) => p._id === order.productId);
+              const product = products?.data?.find((p) => p._id === order.productId);
               return (
                 <div key={order._id} className="border p-3 rounded-md flex flex-col gap-1">
                   <span className="text-xs text-muted-foreground">Order ID: {order._id}</span>
@@ -74,8 +74,8 @@ export const columns: ColumnDef<TTransaction>[] = [
     accessorKey: "date",
     header: "Date",
     cell: ({ row }) => {
-      const date = row.getValue("date") as string;
-      return date ? new Date(date).toLocaleDateString() : "—";
+      const date = row.getValue("date");
+      return date ? new Date(date as string).toLocaleDateString() : "—";
     }
   },
   {

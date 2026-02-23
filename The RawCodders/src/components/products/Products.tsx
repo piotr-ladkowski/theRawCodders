@@ -34,8 +34,8 @@ export default function Products() {
     const getAndSet = async () => { 
       await convex.query(api.products.listProducts, {offset: ((currentPage-1)*docCount), limit: docCount})
       .then((res) => {
-        setProductData(res); 
-        setTableSize(res.length);
+        setProductData(res.data); 
+        setTableSize(res.total);
       })
 
     }

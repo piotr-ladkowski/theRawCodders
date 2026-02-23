@@ -38,8 +38,8 @@ def analyze_transactions(data: dict[str, list[dict[str, Any]]]) -> dict:
         chi2_result = {
             "chi2_statistic": round(float(chi2), 4),
             "p_value": round(float(p), 4),
-            "significant": p < 0.05,
-            "contingency_table": contingency.to_dict(),
+            "significant": bool(p < 0.05),
+            "contingency_table": {str(k): {str(k2): int(v2) for k2, v2 in v.items()} for k, v in contingency.to_dict().items()},
         }
 
     # Discount stats

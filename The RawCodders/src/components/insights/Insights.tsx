@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useQuery, useMutation } from "convex/react"
+import { api } from "../../../convex/_generated/api"
 import {
   Card,
   CardContent,
@@ -19,52 +21,52 @@ import {
 } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 
-const AI_SERVICE_URL = import.meta.env.VITE_AI_SERVICE_URL
-
-interface InsightsData {
-  executive_summary: string
-  key_findings: Record<string, string>
-  recommendations: string[]
-  raw_metrics: {
-    temporal: Record<string, unknown>
-    demographics: Record<string, unknown>
-    products: Record<string, unknown>
-    transactions: Record<string, unknown>
-    returns: Record<string, unknown>
-  }
-}
+// Updated to use the environment variable we set up earlier
+const AI_SERVICE_URL = import.meta.env.VITE_AI_SERVICE_URL || "http://localhost:8000"
 
 export default function Insights() {
-  const [data, setData] = useState<InsightsData | null>(null)
-  const [loading, setLoading] = useState(true)
+  // Read from Convex
+  const latestInsight = useQuery(api.insights.getLatest)
+  const saveInsight = useMutation(api.insights.save)
+
+  // Local state for the generation process
+  const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchInsights = async () => {
-    setLoading(true)
+  const generateInsights = async () => {
+    setIsGenerating(true)
     setError(null)
     try {
+      // 1. Ask Python service to generate the report
       const res = await fetch(`${AI_SERVICE_URL}/insights`)
       if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`)
       const json = await res.json()
-      setData(json)
+      
+      // 2. Save it directly into the Convex database
+      await saveInsight({
+        executive_summary: json.executive_summary,
+        key_findings: json.key_findings,
+        recommendations: json.recommendations,
+        raw_metrics: json.raw_metrics,
+      })
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch insights")
+      setError(err instanceof Error ? err.message : "Failed to generate insights")
     } finally {
-      setLoading(false)
+      setIsGenerating(false)
     }
   }
 
-  useEffect(() => {
-    fetchInsights()
-  }, [])
+  // Still loading the initial state from Convex
+  if (latestInsight === undefined) return <InsightsSkeleton />
 
-  if (loading) return <InsightsSkeleton />
-  if (error) return <InsightsError error={error} onRetry={fetchInsights} />
+  // If there's an error during generation, we handle it here but still show old data if it exists
+  if (error && !latestInsight) return <InsightsError error={error} onRetry={generateInsights} />
 
   return (
     <div className="flex flex-1 flex-col">
       <div className="@container/main flex flex-1 flex-col gap-2">
         <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6">
+          
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -78,31 +80,62 @@ export default function Insights() {
                 </p>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={fetchInsights}>
-              <IconRefresh className="mr-2 h-4 w-4" />
-              Refresh
+            <Button 
+              onClick={generateInsights} 
+              disabled={isGenerating}
+            >
+              <IconRefresh className={`mr-2 h-4 w-4 ${isGenerating ? "animate-spin" : ""}`} />
+              {isGenerating ? "Analyzing Data..." : "Generate New Analysis"}
             </Button>
           </div>
 
-          {/* Executive Summary */}
-          {data && (
-            <>
-              <Card>
+          {error && (
+            <div className="text-red-500 text-sm mb-4">
+              Error generating new insight: {error}
+            </div>
+          )}
+
+          {/* Empty State */}
+          {latestInsight === null && !isGenerating && (
+            <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed rounded-xl mt-4">
+              <IconBrain className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
+              <h3 className="text-lg font-semibold">No Insights Found</h3>
+              <p className="text-muted-foreground text-sm max-w-sm text-center mb-4">
+                You haven't generated any AI insights yet. Click the button below to analyze your store data.
+              </p>
+              <Button onClick={generateInsights}>Run Initial Analysis</Button>
+            </div>
+          )}
+
+          {/* Data State */}
+          {latestInsight && (
+            <div className={isGenerating ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
+              <div className="flex justify-between items-center mb-4">
+                 <p className="text-xs text-muted-foreground">
+                   Last generated: {new Date(latestInsight._creationTime).toLocaleString()}
+                 </p>
+              </div>
+
+              <Card className="mb-6">
                 <CardHeader>
                   <CardTitle>Executive Summary</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm leading-relaxed text-muted-foreground">
-                    {data.executive_summary}
+                    {latestInsight.executive_summary}
                   </p>
                 </CardContent>
               </Card>
 
               {/* Metric Cards */}
-              <MetricCards metrics={data.raw_metrics} />
+              <div className="mb-6">
+                 <MetricCards metrics={latestInsight.raw_metrics} />
+              </div>
 
               {/* Key Findings */}
-              <KeyFindings findings={data.key_findings} />
+              <div className="mb-6">
+                 <KeyFindings findings={latestInsight.key_findings} />
+              </div>
 
               {/* Recommendations */}
               <Card>
@@ -114,7 +147,7 @@ export default function Insights() {
                 </CardHeader>
                 <CardContent>
                   <ol className="list-decimal list-inside space-y-2">
-                    {data.recommendations.map((rec, i) => (
+                    {latestInsight.recommendations.map((rec: string, i: number) => (
                       <li
                         key={i}
                         className="text-sm leading-relaxed text-muted-foreground"
@@ -125,73 +158,57 @@ export default function Insights() {
                   </ol>
                 </CardContent>
               </Card>
-            </>
+            </div>
           )}
+
         </div>
       </div>
     </div>
   )
 }
 
-function MetricCards({
-  metrics,
-}: {
-  metrics: InsightsData["raw_metrics"]
-}) {
-  const {demographics, transactions, returns } = metrics
+function MetricCards({ metrics }: { metrics: any }) {
+  const {demographics, transactions, returns } = metrics || {}
 
   const cards = [
     {
       title: "Total Transactions",
-      value: (transactions as Record<string, unknown>)?.total_transactions ?? "—",
+      value: transactions?.total_transactions ?? "—",
       icon: IconShoppingCart,
     },
     {
       title: "Avg Order Value",
-      value:
-        (transactions as Record<string, unknown>)?.avg_order_value != null
-          ? `$${(transactions as Record<string, unknown>).avg_order_value}`
-          : "—",
+      value: transactions?.avg_order_value != null ? `$${transactions.avg_order_value}` : "—",
       icon: IconChartBar,
     },
     {
       title: "Unique Customers",
-      value:
-        (demographics as Record<string, unknown>)?.total_unique_customers ?? "—",
+      value: demographics?.total_unique_customers ?? "—",
       icon: IconUsers,
     },
     {
       title: "Repeat Customers",
-      value: (demographics as Record<string, unknown>)?.repeat_customers ?? "—",
+      value: demographics?.repeat_customers ?? "—",
       icon: IconUsers,
     },
     {
       title: "Avg Basket Size",
-      value:
-        (transactions as Record<string, unknown>)?.avg_basket_size != null
-          ? `${(transactions as Record<string, unknown>).avg_basket_size} items`
-          : "—",
+      value: transactions?.avg_basket_size != null ? `${transactions.avg_basket_size} items` : "—",
       icon: IconShoppingCart,
     },
     {
       title: "Total Returns",
-      value: (returns as Record<string, unknown>)?.total_returns ?? "—",
+      value: returns?.total_returns ?? "—",
       icon: IconTruckReturn,
     },
     {
       title: "Return Rate",
-      value:
-        (returns as Record<string, unknown>)?.overall_return_rate != null
-          ? `${((returns as Record<string, unknown>).overall_return_rate as number * 100).toFixed(1)}%`
-          : "—",
+      value: returns?.overall_return_rate != null ? `${(returns.overall_return_rate * 100).toFixed(1)}%` : "—",
       icon: IconTruckReturn,
     },
     {
       title: "Cancellation Rate",
-      value:
-        (transactions as Record<string, unknown>)?.cancellation_analysis != null
-          ? `${(((transactions as Record<string, unknown>).cancellation_analysis as Record<string, unknown>).cancellation_rate as number * 100).toFixed(1)}%`
-          : "—",
+      value: transactions?.cancellation_analysis != null ? `${(transactions.cancellation_analysis.cancellation_rate * 100).toFixed(1)}%` : "—",
       icon: IconClock,
     },
   ]
@@ -215,11 +232,7 @@ function MetricCards({
   )
 }
 
-function KeyFindings({
-  findings,
-}: {
-  findings: Record<string, string>
-}) {
+function KeyFindings({ findings }: { findings: any }) {
   const content = findings?.narrative || JSON.stringify(findings, null, 2)
 
   return (
@@ -232,7 +245,7 @@ function KeyFindings({
       </CardHeader>
       <CardContent>
         <div className="prose prose-sm dark:prose-invert max-w-none">
-          {content.split("\n").map((line, i) => {
+          {content.split("\n").map((line: string, i: number) => {
             const trimmed = line.trim()
             if (!trimmed) return null
 
@@ -324,7 +337,7 @@ function InsightsError({
             {error}
           </p>
           <Badge variant="outline" className="text-xs">
-            Make sure the AI service is running at {AI_SERVICE_URL}
+            Make sure the AI service is running at {import.meta.env.VITE_AI_SERVICE_URL || "http://localhost:8000"}
           </Badge>
           <Button variant="outline" onClick={onRetry}>
             <IconRefresh className="mr-2 h-4 w-4" />

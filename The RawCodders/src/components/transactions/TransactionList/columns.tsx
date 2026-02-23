@@ -16,6 +16,14 @@ export const columns: ColumnDef<TTransaction>[] = [
     header: "Client"
   },
   {
+    accessorKey: "date",
+    header: "Date",
+    cell: ({ row }) => {
+      const date = row.getValue("date") as string;
+      return date ? new Date(date).toLocaleDateString() : "—";
+    }
+  },
+  {
     accessorKey: "status",
     header: "Status"
   },

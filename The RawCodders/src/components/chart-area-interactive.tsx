@@ -36,8 +36,8 @@ export const description = "An interactive area chart for transaction revenue"
 
 const chartConfig = {
   revenue: { label: "Revenue" },
-  completed: { label: "Completed ($)", color: "hsl(var(--chart-2))" },
-  pending: { label: "Pending ($)", color: "hsl(var(--chart-4))" },
+  completed: { label: "Completed ($)", color: "var(--accent)" },
+  pending: { label: "Pending ($)", color: "var(--chart-4)" },
 } satisfies ChartConfig
 
 export function TransactionDashboard() {
@@ -132,7 +132,7 @@ export function TransactionDashboard() {
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
         {!transactions ? (
-          <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+          <div className="h-[250px] flex items-center justify-center">
             Loading transaction data...
           </div>
         ) : (

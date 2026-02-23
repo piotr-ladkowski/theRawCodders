@@ -24,7 +24,7 @@ import { api } from "../../../../convex/_generated/api";
 import { useProductsContext } from "./products-context";
 
 export function ProductModal() {
-  const { selectedProduct, setSelectedProduct, editProductModalState, setEditProductModalState } = useProductsContext();
+  const { selectedProduct, setSelectedProduct, editProductModalState, setEditProductModalState, setModalObserver } = useProductsContext();
   const clearSelectedTimeoutRef = useRef<number | null>(null);
   const [imageUrl, setImageUrl] = useState<string>("");
 
@@ -90,6 +90,8 @@ export function ProductModal() {
           product: commonData,
         });
       }
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setModalObserver((prev) => (prev + 1) % 1000);
       setEditProductModalState(false); // Close the modal on success
       scheduleClearSelectedProduct();
     } catch (error) {

@@ -182,7 +182,7 @@ export function DataTable<TData, TValue>({
                 className="cursor-pointer"
                 onClick={() => {
                   const client = row.original as TClient
-                  navigate(`/dashboard/clients/${client._id}`)
+                  void navigate(`/dashboard/clients/${client._id}`)
                 }}
               >
                 {row.getVisibleCells().map((cell) => {

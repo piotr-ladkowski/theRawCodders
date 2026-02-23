@@ -96,15 +96,15 @@ export const listProducts = query({
         offset: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-        let products = await ctx.db.query('products').collect();
+        const products = await ctx.db.query('products').collect();
 
         const offset = args.offset ?? 0;
         const limit = args.limit ?? 50;
-        if (args.limit !== undefined) {
-            return products.slice(offset, offset + args.limit);
-        }
         
-        return products.slice(offset);
+        return { 
+            data: limit === -1 ? products : products.slice(offset, offset + limit),
+            total: products.length
+        }
     },
 });
 

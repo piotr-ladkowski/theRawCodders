@@ -83,7 +83,7 @@ export function DataTable<TData, TValue>({
   const deleteOrderMutation = useMutation(api.orders.deleteOrder)
 
 
-  const products = useQuery(api.products.listProducts, { offset: 0, limit: 50 });
+  const products = useQuery(api.products.listProducts, { offset: 0, limit: -1 });
 
   const table = useReactTable({
     data,
@@ -169,7 +169,7 @@ export function DataTable<TData, TValue>({
     // Map Product ID to Product Name
     if (accessorKey === "productId") {
       const productId = object as string;
-      const product = products?.find((p) => p._id === productId);
+      const product = products?.data?.find((p) => p._id === productId);
       return <span>{product ? product.name : "Loading..."}</span>;
     }
     

@@ -44,7 +44,7 @@ export function TransactionDashboard() {
   const isMobile = useIsMobile()
   const [timeRange, setTimeRange] = React.useState("90d")
 
-  const transactions = useQuery(api.transactions.listTransactions)
+  const transactions = useQuery(api.transactions.listTransactions, { offset: 0, limit: 50 })
 
   React.useEffect(() => {
     if (isMobile) {

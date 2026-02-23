@@ -20,7 +20,7 @@ def analyze_demographics(data: dict[str, list[dict[str, Any]]]) -> dict:
     )
 
     # Calculate age from birthDate
-    clients_df["birthDate"] = pd.to_datetime(clients_df["birthDate"], errors="coerce", utc=True)
+    clients_df["birthDate"] = pd.to_datetime(clients_df["birthDate"], errors="coerce", utc=True, format="mixed")
     now = pd.Timestamp.now(tz="UTC")
     clients_df["age"] = (now - clients_df["birthDate"]).dt.days / 365.25
     clients_df["age"] = clients_df["age"].fillna(0).astype(int)

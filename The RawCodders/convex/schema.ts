@@ -23,7 +23,7 @@ export default defineSchema({
     price: v.number(),
     stock: v.number(),
     image: v.string(),
-    // cost: v.float64()
+    cost: v.number()
   })
   .index("by_name", ["name"]),
 

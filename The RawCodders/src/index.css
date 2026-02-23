@@ -17,13 +17,6 @@
   }
 }
 
-@media (prefers-color-scheme: light) {
-  body {
-    color: var(--color-dark);
-    background: var(--color-light);
-    font-family: Arial, Helvetica, sans-serif;
-  }
-}
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);

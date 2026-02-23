@@ -73,7 +73,12 @@ const data = {
       title: "Users",
       url: "/dashboard/users",
       icon: IconUserCircle
-    }
+    },
+    {
+      title: "AI Insights",
+      url: "/dashboard/insights",
+      icon: IconFileAi,
+    },
   ],
   navClouds: [
     {

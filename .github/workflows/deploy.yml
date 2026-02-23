@@ -11,25 +11,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # 1. Detect which folders changed in this push
+      - name: Check for changed files
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            core:
+              - 'The RawCodders/**'
+            ai:
+              - 'ai-service/**'
+
+      # 2. Pull the latest code on the server
       - name: Pull latest code
         run: |
           set -euo pipefail
           cd /opt/the_rawcodders
+          git fetch origin main
           git reset --hard origin/main
-          git pull origin main
+          git clean -fd
 
-      - name: Deploy Infrastructure
+      # 3. Deploy Core App (Only runs if files inside 'The RawCodders' changed)
+      - name: Deploy Core Infrastructure (Frontend, Backend, Convex)
+        if: steps.filter.outputs.core == 'true'
         run: |
           set -euo pipefail
           cd "/opt/the_rawcodders/The RawCodders"
 
-          # 1. Stop existing services cleanly
-          sudo docker compose --env-file .env.local down --remove-orphans
-          
-          # 2. Start backend first and wait for it to be healthy
-          sudo docker compose --env-file .env.local up -d --wait backend
+          # Start backend first and wait for it to be healthy
+          sudo docker compose --env-file .env.local up -d --build --wait backend
 
-          # 3. Sync Env AND Deploy Convex in ONE container run
+          # Sync Env AND Deploy Convex in ONE container run
           sudo docker compose --env-file .env.local run --rm convex-deploy sh -lc '
           set -euo pipefail
 
@@ -111,7 +123,6 @@ jobs:
           NODE
 
           # ---- Deploy Convex Functions ----
-          # Switched to npm install with caching flags instead of strict ci
           npm install --prefer-offline --no-audit --no-fund
           npx convex deploy --yes --url $CONVEX_SELF_HOSTED_URL --admin-key $CONVEX_SELF_HOSTED_ADMIN_KEY
 
@@ -120,5 +131,16 @@ jobs:
           npx convex run seed:seed --url $CONVEX_SELF_HOSTED_URL --admin-key $CONVEX_SELF_HOSTED_ADMIN_KEY
           '
 
-          # 4. Bring up the remaining services (frontend & dashboard) and build if needed
-          sudo docker compose --env-file .env.local up -d --build
+          # Bring up the remaining frontend & dashboard services
+          sudo docker compose --env-file .env.local up -d --build frontend dashboard
+
+      # 4. Deploy AI Service (Only runs if files inside 'ai-service' changed)
+      - name: Deploy AI Microservice
+        if: steps.filter.outputs.ai == 'true'
+        run: |
+          set -euo pipefail
+          # We run this from "The RawCodders" directory because that is where docker-compose.yml lives
+          cd "/opt/the_rawcodders/The RawCodders"
+          
+          # Force rebuild and startup of ONLY the AI service
+          sudo docker compose --env-file .env.local up -d --build ai-service

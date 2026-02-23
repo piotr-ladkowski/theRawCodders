@@ -5,13 +5,17 @@ from itertools import combinations
 import pandas as pd
 from scipy import stats
 
+def _rows(payload):
+    if isinstance(payload, dict):
+        return payload.get("data", [])
+    return payload if isinstance(payload, list) else []
 
 def analyze_products(data: dict[str, list[dict[str, Any]]]) -> dict:
     """Analyze product performance, co-purchases, and return rates."""
-    products = data["products"]
-    orders = data["orders"]
-    returns = data["returns"]
-    transactions = data["transactions"]
+    products = _rows(data.get("products", []))
+    orders = _rows(data.get("orders", []))
+    returns = _rows(data.get("returns", []))
+    transactions = _rows(data.get("transactions", []))
 
     if not products or not orders:
         return {"error": "Insufficient data for product analysis"}
@@ -21,22 +25,26 @@ def analyze_products(data: dict[str, list[dict[str, Any]]]) -> dict:
     returns_df = pd.DataFrame(returns) if returns else pd.DataFrame()
     trans_df = pd.DataFrame(transactions) if transactions else pd.DataFrame()
 
+    product_col = "productId" if "productId" in orders_df.columns else "product_id" if "product_id" in orders_df.columns else None
+    if product_col is None:
+        raise KeyError(f"Missing productId/product_id in orders_df. Columns: {orders_df.columns.tolist()}")
+
     # Build product lookup
     product_map = {p["_id"]: p for p in products}
 
     # Top 10 by quantity sold
-    qty_by_product = orders_df.groupby("productId")["quantity"].sum().sort_values(ascending=False)
+    qty_by_product = orders_df.groupby(product_col)["quantity"].sum().sort_values(ascending=False)
     top10_qty = {
         product_map.get(pid, {}).get("name", pid): int(qty)
         for pid, qty in qty_by_product.head(10).items()
     }
 
     # Top 10 by revenue
-    orders_df["price"] = orders_df["productId"].map(
+    orders_df["price"] = orders_df[product_col].map(
         lambda pid: product_map.get(pid, {}).get("price", 0)
     )
     orders_df["revenue"] = orders_df["price"] * orders_df["quantity"]
-    rev_by_product = orders_df.groupby("productId")["revenue"].sum().sort_values(ascending=False)
+    rev_by_product = orders_df.groupby(product_col)["revenue"].sum().sort_values(ascending=False)
     top10_revenue = {
         product_map.get(pid, {}).get("name", pid): round(float(rev), 2)
         for pid, rev in rev_by_product.head(10).items()

@@ -83,7 +83,7 @@ export function DataTable<TData, TValue>({
   const deleteOrderMutation = useMutation(api.orders.deleteOrder)
 
 
-  const products = useQuery(api.products.listProducts, { offset: 0, limit: 50 });
+  const products = useQuery(api.products.listProducts, { offset: 0, limit: -1 });
 
   const table = useReactTable({
     data,

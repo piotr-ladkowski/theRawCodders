@@ -91,11 +91,21 @@ export const updateProductStock = mutation({
 
 
 export const listProducts = query({
-    args: {},
-    handler: async (ctx) => {
-        return await ctx.db.query('products').collect()
+    args: {
+        limit: v.optional(v.number()),
+        offset: v.optional(v.number()),
     },
-})
+    handler: async (ctx, args) => {
+        let products = await ctx.db.query('products').collect();
+
+        const offset = args.offset ?? 0;
+        if (args.limit !== undefined) {
+            return products.slice(offset, offset + args.limit);
+        }
+        
+        return products.slice(offset);
+    },
+});
 
 export const getProduct = query({
 

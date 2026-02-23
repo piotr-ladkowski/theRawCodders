@@ -74,3 +74,26 @@ export const deleteReturn = mutation({
         await ctx.db.delete(args.returnId);
     },
 });
+
+export const listReturnsWithDates = query({
+    args: {},
+    handler: async (ctx) => {
+        const returns = await ctx.db.query("returns").collect();
+        const result = [];
+
+        for (const ret of returns) {
+            const order = await ctx.db.get(ret.orderId);
+            if (order) {
+                const transaction = await ctx.db.get(order.transactionId);
+                if (transaction) {
+                    result.push({
+                        ...ret,
+                        date: transaction.date,
+                    });
+                }
+            }
+        }
+
+        return result;
+    },
+});

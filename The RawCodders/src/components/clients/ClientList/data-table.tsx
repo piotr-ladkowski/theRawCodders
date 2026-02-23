@@ -51,6 +51,7 @@ import type { TClient } from "./columns"
 
 import { api } from "../../../../convex/_generated/api"
 import { useMutation } from "convex/react"
+import { useNavigate } from "react-router-dom"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -63,6 +64,7 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   const { setSelectedClient, setEditClientModalState } = useClientsContext()
   const deleteClientMutation = useMutation(api.clients.deleteClient)
+  const navigate = useNavigate()
   const table = useReactTable({
     data,
     columns,
@@ -177,6 +179,11 @@ export function DataTable<TData, TValue>({
               <TableRow
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
+                className="cursor-pointer"
+                onClick={() => {
+                  const client = row.original as TClient
+                  navigate(`/dashboard/clients/${client._id}`)
+                }}
               >
                 {row.getVisibleCells().map((cell) => {
                   const accessorKey = cell.column.id

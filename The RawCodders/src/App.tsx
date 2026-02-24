@@ -1,20 +1,22 @@
-
 import { Authenticated, Unauthenticated } from "convex/react";
 import MainLayout from "./MainLayout";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import DashboardExample from "./components/dashboard/DashboardExample";
-import Orders from "./components/orders/Orders";
-import Transactions from "./components/transactions/Transactions";
-import Products from "./components/products/Products";
-import Clients from "./components/clients/Clients";
-import Returns from "./components/returns/Returns";
-import ClientDetail from "./components/client_detail/Client_detail";
 import Insights from "./components/insights/Insights";
 import LoginPage from "./components/login-form";
 import LandingLayout from "./landing-page/LandingLayout";
 import LandingPage from "./landing-page/LandingPage";
 import AboutUsPage from "./landing-page/AboutUsPage";
 import ProductsPage from "./landing-page/ProductsPage";
+
+// --- NEW COMPONENT IMPORTS ---
+// Note: You must rename your existing folders in src/components to match these
+import Incidents from "./components/incidents/Incidents";
+import Dispatches from "./components/dispatches/Dispatches";
+import Equipment from "./components/equipment/Equipment";
+import Personnel from "./components/personnel/Personnel";
+import MaintenanceLogs from "./components/maintenance/MaintenanceLogs";
+import PersonnelDetail from "./components/personnel_detail/PersonnelDetail";
 
 export default function App() {
   return (
@@ -36,12 +38,15 @@ export default function App() {
         >
           <Route index element={<Navigate to="/dashboard/main" replace />} />
           <Route path="main" element={<DashboardExample />} />
-          <Route path="transactions" element={<Transactions />} />
-          <Route path="orders" element={<Orders />} />
-          <Route path="products" element={<Products />} />
-          <Route path="clients" element={<Clients />} />
-          <Route path="clients/:clientId" element={<ClientDetail />} />
-          <Route path="returns" element={<Returns />} />
+          
+          {/* NEW MOUNTAIN RESCUE ROUTES */}
+          <Route path="incidents" element={<Incidents />} />
+          <Route path="dispatches" element={<Dispatches />} />
+          <Route path="equipment" element={<Equipment />} />
+          <Route path="personnel" element={<Personnel />} />
+          <Route path="personnel/:personnelId" element={<PersonnelDetail />} />
+          <Route path="maintenance" element={<MaintenanceLogs />} />
+          
           <Route path="insights" element={<Insights />} />
         </Route>
 

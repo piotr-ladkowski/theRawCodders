@@ -1,18 +1,13 @@
 import * as React from "react"
 import {
-  IconCamera,
-  IconDashboard,
-  IconDatabase,
+  IconMap2,
+  IconActivity,
+  IconSend,
+  IconBackpack,
+  IconUsersGroup,
+  IconTools,
   IconFileAi,
-  IconFileDescription,
-  IconFileWord,
-  IconCreditCardPay,
-  IconReport,
   IconSettings,
-  IconUsers,
-  IconShoppingCart,
-  IconAssembly,
-  IconTruckReturn
 } from "@tabler/icons-react"
 import { useQuery } from "convex/react"
 import { api } from "../../convex/_generated/api"
@@ -32,41 +27,36 @@ import {
 import { Link } from "react-router-dom"
 
 const data = {
-  user: {
-    name: "user",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: [
     {
-      title: "Dashboard",
+      title: "Command Center",
       url: "/dashboard/main",
-      icon: IconDashboard,
+      icon: IconMap2,
     },
     {
-      title: "Transactions",
-      url: "/dashboard/transactions",
-      icon: IconCreditCardPay,
+      title: "Incidents",
+      url: "/dashboard/incidents",
+      icon: IconActivity,
     },
     {
-      title: "Orders",
-      url: "/dashboard/orders",
-      icon: IconShoppingCart,
+      title: "Dispatches",
+      url: "/dashboard/dispatches",
+      icon: IconSend,
     },
     {
-      title: "Products",
-      url: "/dashboard/products",
-      icon: IconAssembly,
+      title: "Equipment",
+      url: "/dashboard/equipment",
+      icon: IconBackpack,
     },
     {
-      title: "Clients",
-      url: "/dashboard/clients",
-      icon: IconUsers,
+      title: "Personnel",
+      url: "/dashboard/personnel",
+      icon: IconUsersGroup,
     },
     {
-      title: "Returns",
-      url: "/dashboard/returns",
-      icon: IconTruckReturn,
+      title: "Maintenance",
+      url: "/dashboard/maintenance",
+      icon: IconTools,
     },
     {
       title: "AI Insights",
@@ -74,86 +64,11 @@ const data = {
       icon: IconFileAi,
     },
   ],
-  navClouds: [
-    {
-      title: "Capture",
-      icon: IconCamera,
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Proposal",
-      icon: IconFileDescription,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Prompts",
-      icon: IconFileAi,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-  ],
   navSecondary: [
     {
       title: "Settings",
       url: "#",
       icon: IconSettings,
-    },
-    // {
-    //   title: "Get Help",
-    //   url: "#",
-    //   icon: IconHelp,
-    // },
-    // {
-    //   title: "Search",
-    //   url: "#",
-    //   icon: IconSearch,
-    // },
-  ],
-  documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: IconDatabase,
-    },
-    {
-      name: "Reports",
-      url: "#",
-      icon: IconReport,
-    },
-    {
-      name: "Word Assistant",
-      url: "#",
-      icon: IconFileWord,
     },
   ],
 }
@@ -176,7 +91,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:!p-1.5 hover:bg-inherit"
             >
               <Link to="/">
-                <span className="text-base font-semibold">The Raw Codders App</span>
+                <span className="text-base font-semibold">Rescue Command Base</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -184,7 +99,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        {/* <NavDocuments items={data.documents} /> */}
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

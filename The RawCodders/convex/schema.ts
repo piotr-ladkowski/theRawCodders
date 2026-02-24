@@ -2,87 +2,107 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { authTables } from "@convex-dev/auth/server";
 
-export const ReturnReason = v.union(
-  v.literal("Product not received"),
-  v.literal("Discrepancy with the description"),
-  v.literal("Faulty product"),
-  v.literal("Other")
+// Replaces ReturnReason
+export const EquipmentStatus = v.union(
+  v.literal("Available"),
+  v.literal("In Use"),
+  v.literal("Maintenance"),
+  v.literal("Retired")
 );
 
-export const TransactionStatus = v.union(
-  v.literal("pending"),
-  v.literal("completed"),
-  v.literal("cancelled")
+// Replaces TransactionStatus
+export const IncidentStatus = v.union(
+  v.literal("standby"),
+  v.literal("active"),
+  v.literal("resolved")
+);
+
+export const IncidentType = v.union(
+  v.literal("Avalanche"),
+  v.literal("Missing Person"),
+  v.literal("Medical Emergency"),
+  v.literal("Fall / Injury"),
+  v.literal("Other")
 );
 
 export default defineSchema({
   ...authTables,
 
-  products: defineTable({
+  // Replaces "products"
+  equipment: defineTable({
     name: v.string(),
-    price: v.number(),
-    stock: v.number(),
-    image: v.string(),
-    cost: v.number()
+    category: v.string(), // e.g., Vehicle, Medical, Climbing Gear
+    status: EquipmentStatus,
+    image: v.optional(v.string()),
+    lastInspected: v.string(), // ISO date
   })
-  .index("by_name", ["name"]),
+    .index("by_category", ["category"])
+    .index("by_status", ["status"]),
 
-clients: defineTable({
+  // Replaces "clients"
+  personnel: defineTable({
     name: v.string(),
     email: v.string(),
     phone: v.string(),
-    birthDate: v.string(),
-    sex: v.string(),
-    address: v.object({
-      line1: v.string(),
-      line2: v.string(),
-      postCode: v.string(),
-      city: v.string(),
-      country: v.string(),
+    role: v.string(), // e.g., Rescuer, Medic, Pilot, Coordinator
+    certifications: v.array(v.string()), // e.g., ["CPR", "Avalanche L2"]
+    baseStation: v.string(),
+    isAvailable: v.boolean(),
+    aiProfileSummary: v.optional(v.string()), // Quick AI generated bio of their expertise
+  })
+    .index("by_email", ["email"])
+    .index("by_name", ["name"])
+    .index("by_availability", ["isAvailable"]),
+
+  // Replaces "transactions"
+  incidents: defineTable({
+    type: IncidentType,
+    status: IncidentStatus,
+    severityLevel: v.number(), // 1 to 5
+    gpsCoordinates: v.object({
+      latitude: v.float64(),
+      longitude: v.float64(),
     }),
-    aiSummary: v.optional(v.string()), 
-  }).index("by_email", ["email"])
-    .index("by_name", ["name"]),
+    weatherConditions: v.optional(v.string()),
+    reportedDate: v.string(),
+  }).index("by_status", ["status"]),
 
-  transactions: defineTable({
-    clientId: v.id("clients"),
-    status: TransactionStatus,
-    totalPrice: v.float64(),
-    discount: v.float64(),
-    orderId: v.array(v.id("orders")),
-    date: v.string(),
-  }).index("by_clientId", ["clientId"]),
-
-  orders: defineTable({
-    transactionId: v.id("transactions"),
-    productId: v.id("products"),
-    quantity: v.number(),
+  // Replaces "orders" (linking incidents to resources)
+  dispatches: defineTable({
+    incidentId: v.id("incidents"),
+    personnelId: v.optional(v.id("personnel")),
+    equipmentId: v.optional(v.id("equipment")),
+    dispatchTime: v.string(),
   })
-    .index("by_transactionId", ["transactionId"])
-    .index("by_productId", ["productId"]),
+    .index("by_incidentId", ["incidentId"])
+    .index("by_personnelId", ["personnelId"])
+    .index("by_equipmentId", ["equipmentId"]),
 
-  returns: defineTable({
-    orderId: v.id("orders"),
-    reason: ReturnReason,
-    description: v.string()
-  }).index("by_orderId", ["orderId"]),
+  // Replaces "returns"
+  maintenance_logs: defineTable({
+    equipmentId: v.id("equipment"),
+    issueType: v.string(),
+    description: v.string(),
+    logDate: v.string(),
+  }).index("by_equipmentId", ["equipmentId"]),
 
-  opinions: defineTable({
-    productId: v.id("products"),
-    clientId: v.id("clients"),
-    rating: v.number(),
-    text: v.string(),
-    date: v.string(),
+  // Replaces "opinions"
+  mission_reports: defineTable({
+    incidentId: v.id("incidents"),
+    reporterId: v.id("personnel"),
+    difficultyRating: v.optional(v.number()), // 1-5 scale of mission difficulty
+    notes: v.string(),
+    reportDate: v.string(),
   })
-    .index("by_productId", ["productId"])
-    .index("by_clientId", ["clientId"]),
-  
+    .index("by_incidentId", ["incidentId"])
+    .index("by_reporterId", ["reporterId"]),
+
+  // Kept for AI but adapted field names
   insights: defineTable({
     executive_summary: v.string(),
     key_findings: v.any(),
     recommendations: v.array(v.string()),
-    marketing_actions: v.optional(v.array(v.string())),
+    operational_actions: v.optional(v.array(v.string())), // Replaced marketing_actions
     raw_metrics: v.any(),
   }),
-
 });

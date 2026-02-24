@@ -13,15 +13,16 @@ import { Skeleton } from "@/components/ui/skeleton"
 import {
   IconBrain,
   IconRefresh,
-  IconChartBar,
-  IconUsers,
-  IconShoppingCart,
-  IconTruckReturn,
+  IconActivity,
+  IconUsersGroup,
+  IconBackpack,
+  IconTools,
   IconClock,
   IconDownload,
+  IconSpeakerphone,
+  IconAlertTriangle
 } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
-import { IconSpeakerphone } from "@tabler/icons-react"
 
 // Updated to use the environment variable we set up earlier
 const AI_SERVICE_URL = import.meta.env.VITE_AI_SERVICE_URL || "http://localhost:8000"
@@ -50,7 +51,7 @@ export default function Insights() {
         executive_summary: json.executive_summary,
         key_findings: json.key_findings,
         recommendations: json.recommendations,
-        marketing_actions: json.marketing_actions ?? [],
+        operational_actions: json.operational_actions ?? [], // Changed from marketing_actions
         raw_metrics: json.raw_metrics,
       })
     } catch (err) {
@@ -73,7 +74,7 @@ export default function Insights() {
           executive_summary: latestInsight.executive_summary,
           key_findings: latestInsight.key_findings,
           recommendations: latestInsight.recommendations,
-          marketing_actions: latestInsight.marketing_actions ?? [],
+          operational_actions: latestInsight.operational_actions ?? [], // Changed from marketing_actions
           raw_metrics: latestInsight.raw_metrics,
         }),
       })
@@ -84,7 +85,7 @@ export default function Insights() {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = `Insights_Report_${new Date().toISOString().split("T")[0]}.pdf`
+      a.download = `Rescue_Command_Insights_${new Date().toISOString().split("T")[0]}.pdf`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
@@ -114,10 +115,10 @@ export default function Insights() {
               <IconBrain className="h-8 w-8 text-primary" />
               <div>
                 <h1 className="text-2xl font-bold tracking-tight">
-                  AI Insights
+                  Command Insights
                 </h1>
                 <p className="text-muted-foreground text-sm">
-                  Automated business intelligence powered by GPT-4o
+                  Automated operational intelligence powered by AI
                 </p>
               </div>
             </div>
@@ -152,7 +153,7 @@ export default function Insights() {
               <IconBrain className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
               <h3 className="text-lg font-semibold">No Insights Found</h3>
               <p className="text-muted-foreground text-sm max-w-sm text-center mb-4">
-                You haven't generated any AI insights yet. Click the button below to analyze your store data.
+                You haven't generated any AI insights yet. Click the button below to analyze your rescue operations data.
               </p>
               <Button onClick={generateInsights}>Run Initial Analysis</Button>
             </div>
@@ -193,7 +194,7 @@ export default function Insights() {
                 <CardHeader>
                   <CardTitle>Actionable Recommendations</CardTitle>
                   <CardDescription>
-                    Prioritized steps to improve business performance
+                    Prioritized steps to improve rescue operations
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -210,23 +211,23 @@ export default function Insights() {
                 </CardContent>
               </Card>
 
-              {/* Marketing Actions */}
-              {latestInsight.marketing_actions && latestInsight.marketing_actions.length > 0 && (
+              {/* Operational Actions */}
+              {latestInsight.operational_actions && latestInsight.operational_actions.length > 0 && (
                 <Card className={'mt-6'}>
                   <CardHeader>
                     <div className="flex items-center gap-2">
-                      <IconSpeakerphone className="h-5 w-5 text-primary" />
+                      <IconAlertTriangle className="h-5 w-5 text-primary" />
                       <div>
-                        <CardTitle>Marketing Actions</CardTitle>
+                        <CardTitle>Operational Actions</CardTitle>
                         <CardDescription>
-                          AI-proposed campaign ideas based on your data patterns
+                          AI-proposed operational shifts based on current risk patterns
                         </CardDescription>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      {latestInsight.marketing_actions.map((action: string, i: number) => (
+                      {latestInsight.operational_actions.map((action: string, i: number) => (
                         <div
                           key={i}
                           className="rounded-lg border p-4 space-y-1"
@@ -255,48 +256,49 @@ export default function Insights() {
 }
 
 function MetricCards({ metrics }: { metrics: any }) {
-  const { demographics, transactions, returns } = metrics || {}
+  // Adapted to expect rescue domain metrics from the Python AI backend
+  const { incidents, personnel, equipment, maintenance } = metrics || {}
 
   const cards = [
     {
-      title: "Total Transactions",
-      value: transactions?.total_transactions ?? "—",
-      icon: IconShoppingCart,
+      title: "Total Incidents",
+      value: incidents?.total_incidents ?? "—",
+      icon: IconActivity,
     },
     {
-      title: "Avg Order Value",
-      value: transactions?.avg_order_value != null ? `$${transactions.avg_order_value}` : "—",
-      icon: IconChartBar,
+      title: "Avg Severity",
+      value: incidents?.avg_severity != null ? `${incidents.avg_severity}/5` : "—",
+      icon: IconAlertTriangle,
     },
     {
-      title: "Unique Customers",
-      value: demographics?.total_unique_customers ?? "—",
-      icon: IconUsers,
+      title: "Available Personnel",
+      value: personnel?.available_personnel ?? "—",
+      icon: IconUsersGroup,
     },
     {
-      title: "Repeat Customers",
-      value: demographics?.repeat_customers ?? "—",
-      icon: IconUsers,
+      title: "Active Rescuers",
+      value: personnel?.active_rescuers ?? "—",
+      icon: IconUsersGroup,
     },
     {
-      title: "Avg Basket Size",
-      value: transactions?.avg_basket_size != null ? `${transactions.avg_basket_size} items` : "—",
-      icon: IconShoppingCart,
+      title: "Equipment In Use",
+      value: equipment?.in_use ?? "—",
+      icon: IconBackpack,
     },
     {
-      title: "Total Returns",
-      value: returns?.total_returns ?? "—",
-      icon: IconTruckReturn,
-    },
-    {
-      title: "Return Rate",
-      value: returns?.overall_return_rate != null ? `${(returns.overall_return_rate * 100).toFixed(1)}%` : "—",
-      icon: IconTruckReturn,
-    },
-    {
-      title: "Cancellation Rate",
-      value: transactions?.cancellation_analysis != null ? `${(transactions.cancellation_analysis.cancellation_rate * 100).toFixed(1)}%` : "—",
+      title: "Avg Response Time",
+      value: incidents?.avg_response_time ?? "—",
       icon: IconClock,
+    },
+    {
+      title: "Maintenance Logs",
+      value: maintenance?.total_logs ?? "—",
+      icon: IconTools,
+    },
+    {
+      title: "Critical Issues",
+      value: maintenance?.critical_issues ?? "—",
+      icon: IconAlertTriangle,
     },
   ]
 
@@ -327,7 +329,7 @@ function KeyFindings({ findings }: { findings: any }) {
       <CardHeader>
         <CardTitle>Key Findings</CardTitle>
         <CardDescription>
-          Statistical analysis of your business data
+          Statistical analysis of your rescue data
         </CardDescription>
       </CardHeader>
       <CardContent>

@@ -37,9 +37,19 @@ export async function recalculateTransaction(ctx: MutationCtx, transactionId: Id
 }
 
 export const listTransactions = query({
-    args: {},
-    handler: async (ctx) => {
-        const transactions = await ctx.db.query("transactions").collect();
+    args: {
+        limit: v.optional(v.number()),
+        offset: v.optional(v.number()),
+    },
+    handler: async (ctx, args) => {
+        let transactions = await ctx.db.query("transactions").collect();
+        
+        const offset = args.offset ?? 0;
+        if (args.limit !== undefined) {
+            transactions = transactions.slice(offset, offset + args.limit);
+        } else {
+            transactions = transactions.slice(offset);
+        }
         
         return await Promise.all(
             transactions.map(async (transaction) => {

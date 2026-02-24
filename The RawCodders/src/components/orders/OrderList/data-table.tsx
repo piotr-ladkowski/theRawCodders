@@ -83,7 +83,7 @@ export function DataTable<TData, TValue>({
   const deleteOrderMutation = useMutation(api.orders.deleteOrder)
 
 
-  const products = useQuery(api.products.listProducts);
+  const products = useQuery(api.products.listProducts, { offset: 0, limit: -1 });
 
   const table = useReactTable({
     data,
@@ -136,6 +136,32 @@ export function DataTable<TData, TValue>({
 
   }
 
+  function PaginationControl({className}: {className?: string}) {
+    return (
+      <div className={"flex items-center justify-end space-x-2 py-4 " + className}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => pageSettings.setCurrentPage(pageSettings.currentPage - 1)}
+          disabled={pageSettings.currentPage < 2}
+        >
+          <IconChevronLeft />
+        </Button>
+        <div>
+          {`${pageSettings.currentPage} / ${Math.floor(pageSettings.tableSize/pageSettings.docCount) + Number(!!(pageSettings.tableSize%pageSettings.docCount))}`}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => pageSettings.setCurrentPage(pageSettings.currentPage + 1)}
+          disabled={ pageSettings.currentPage >= Math.floor(pageSettings.tableSize/pageSettings.docCount) + Number(!!(pageSettings.tableSize%pageSettings.docCount)) }
+        >
+          <IconChevronRight />
+        </Button>
+      </div>
+    )
+  }
+
 
   function RenderObject(object: any, accessorKey: string, Order: TOrder) {
     const obj = object as Record<string, any>;
@@ -143,7 +169,7 @@ export function DataTable<TData, TValue>({
     // Map Product ID to Product Name
     if (accessorKey === "productId") {
       const productId = object as string;
-      const product = products?.find((p) => p._id === productId);
+      const product = products?.data?.find((p) => p._id === productId);
       return <span>{product ? product.name : "Loading..."}</span>;
     }
     
@@ -176,25 +202,28 @@ export function DataTable<TData, TValue>({
 
   return (
     <>
-      <div className="flex items-center gap-2 my-4">
-        <Label className="mb-0">Items per page:</Label>
-        <Select
-          value={String(pageSettings.docCount)}
-          onValueChange={(value) => {pageSettings.setDocCount(Number(value)); pageSettings.setCurrentPage(1)}}
-        >
-          <SelectTrigger className="w-[80px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup >
-              <SelectItem value="15">15</SelectItem>
-              <SelectItem value="30">30</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-              <SelectItem value="70">70</SelectItem>
-              <SelectItem value="100">100</SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
+      <div className="flex items-center !justify-between gap-2 my-4">
+        <div className="flex flex-row items-center gap-2">
+          <Label className="mb-0">Items per page:</Label>
+          <Select
+            value={String(pageSettings.docCount)}
+            onValueChange={(value) => {pageSettings.setDocCount(Number(value)); pageSettings.setCurrentPage(1)}}
+          >
+            <SelectTrigger className="w-[80px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup >
+                <SelectItem value="15">15</SelectItem>
+                <SelectItem value="30">30</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="70">70</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+        <PaginationControl className="flex flex-row justify-end" />
       </div>
       <div className="overflow-hidden text-center rounded-md border">
         <Table>
@@ -249,27 +278,7 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
       
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => pageSettings.setCurrentPage(pageSettings.currentPage - 1)}
-          disabled={pageSettings.currentPage < 2}
-        >
-          <IconChevronLeft />
-        </Button>
-        <div>
-          {pageSettings.currentPage}
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => pageSettings.setCurrentPage(pageSettings.currentPage + 1)}
-          disabled={ ((pageSettings.tableSize % pageSettings.docCount) === 0 && pageSettings.currentPage - 1 >= pageSettings.tableSize/pageSettings.docCount) || ((pageSettings.tableSize % pageSettings.docCount) > 0 && pageSettings.currentPage >= pageSettings.tableSize/pageSettings.docCount) }
-        >
-          <IconChevronRight />
-        </Button>
-      </div>
+      <PaginationControl />
     </>
   )
 }

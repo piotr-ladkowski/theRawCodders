@@ -9,9 +9,43 @@ export const ReturnReason = v.union(
 );
 
 export const listReturns = query({
-    args: {},
-    handler: async (ctx) => {
-        return await ctx.db.query("returns").collect();
+    args: {
+        limit: v.optional(v.number()),
+        offset: v.optional(v.number()),
+    },
+    handler: async (ctx, args) => {
+        let returns = await ctx.db.query("returns").collect();
+
+        const offset = args.offset ?? 0;
+        const limit = args.limit ?? 50;
+        
+        let slicedReturns = returns;
+        if (args.limit !== undefined) {
+            slicedReturns = returns.slice(offset, offset + args.limit);
+        } else {
+            slicedReturns = returns.slice(offset);
+        }
+
+        const enrichedReturns = await Promise.all(
+            slicedReturns.map(async (ret) => {
+                const order = await ctx.db.get(ret.orderId);
+                let productName = "Unknown Product";
+                
+                if (order) {
+                    const product = await ctx.db.get(order.productId);
+                    if (product) {
+                        productName = product.name;
+                    }
+                }
+                
+                return {
+                    ...ret,
+                    productName,
+                };
+            })
+        );
+        
+        return enrichedReturns;
     },
 });
 
@@ -72,5 +106,28 @@ export const deleteReturn = mutation({
     },
     handler: async (ctx, args) => {
         await ctx.db.delete(args.returnId);
+    },
+});
+
+export const listReturnsWithDates = query({
+    args: {},
+    handler: async (ctx) => {
+        const returns = await ctx.db.query("returns").collect();
+        const result = [];
+
+        for (const ret of returns) {
+            const order = await ctx.db.get(ret.orderId);
+            if (order) {
+                const transaction = await ctx.db.get(order.transactionId);
+                if (transaction) {
+                    result.push({
+                        ...ret,
+                        date: transaction.date,
+                    });
+                }
+            }
+        }
+
+        return result;
     },
 });

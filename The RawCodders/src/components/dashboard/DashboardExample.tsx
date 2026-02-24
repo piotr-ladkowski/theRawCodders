@@ -1,4 +1,5 @@
 import { TransactionDashboard } from "@/components/chart-area-interactive"
+import { ReturnsDashboard } from "@/components/chart-returns"
 //import { DataTable } from "@/components/data-table"
 import { SectionCards } from "@/components/section-cards"
 
@@ -11,6 +12,9 @@ const DashboardExample = () => {
                     <SectionCards />
                     <div className="px-4 lg:px-6">
                         <TransactionDashboard />
+                    </div>
+                    <div className="px-4 lg:px-6">
+                        <ReturnsDashboard />
                     </div>                    
                     </div>
                 </div>

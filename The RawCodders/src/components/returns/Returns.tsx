@@ -9,7 +9,7 @@ import { ReturnsProvider } from "./ReturnList/returns-context";
 import { Spinner } from "../ui/spinner";
 
 export default function Returns() {
-  const returns = useQuery(api.returns.listReturns);
+  const returns = useQuery(api.returns.listReturns, { offset: 0, limit: 50 });
   const [selectedReturn, setSelectedReturn] = useState<TReturn>();
   const [editReturnModalState, setEditReturnModalState] = useState<boolean>(false);
 

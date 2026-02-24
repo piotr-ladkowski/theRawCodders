@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useQuery } from "convex/react"
 import { api } from "../../convex/_generated/api"
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import {
@@ -32,19 +32,15 @@ import {
   ToggleGroupItem,
 } from "@/components/ui/toggle-group"
 
-export const description = "An interactive area chart for transaction revenue"
-
 const chartConfig = {
-  revenue: { label: "Revenue" },
-  completed: { label: "Completed ($)", color: "var(--color-green-500)" },
-  pending: { label: "Pending ($)", color: "var(--accent)" },
+  returns: { label: "Returns", color: "var(--accent)" },
 } satisfies ChartConfig
 
-export function TransactionDashboard() {
+export function ReturnsDashboard() {
   const isMobile = useIsMobile()
   const [timeRange, setTimeRange] = React.useState("90d")
 
-  const transactions = useQuery(api.transactions.listTransactions, { offset: 0, limit: 50 })
+  const returnsWithDates = useQuery(api.returns.listReturnsWithDates)
 
   React.useEffect(() => {
     if (isMobile) {
@@ -53,34 +49,30 @@ export function TransactionDashboard() {
   }, [isMobile])
 
   const chartData = React.useMemo(() => {
-    if (!transactions) return []
+    if (!returnsWithDates) return []
 
-    const groupedData: Record<string, { date: string; completed: number; pending: number }> = {}
+    const groupedData: Record<string, { date: string; returns: number }> = {}
 
-    transactions.forEach((tx) => {
-      // tx.date looks like "2024-06-15T14:30"
-      // We split by "T" and grab the first part ("2024-06-15") to group by day
-      const dateStr = tx.date ? tx.date.split("T")[0] : new Date().toISOString().split("T")[0];
+    returnsWithDates.forEach((ret) => {
+      if (!ret.date) return
+
+      const dateStr = ret.date.split("T")[0]
 
       if (!groupedData[dateStr]) {
-        groupedData[dateStr] = { date: dateStr, completed: 0, pending: 0 }
+        groupedData[dateStr] = { date: dateStr, returns: 0 }
       }
 
-      if (tx.status === "completed") {
-        groupedData[dateStr].completed += tx.totalPrice
-      } else if (tx.status === "pending") {
-        groupedData[dateStr].pending += tx.totalPrice
-      }
+      groupedData[dateStr].returns += 1
     })
 
     return Object.values(groupedData).sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     )
-  }, [transactions])
+  }, [returnsWithDates])
 
   const filteredData = chartData.filter((item) => {
     const date = new Date(item.date)
-    const referenceDate = new Date() 
+    const referenceDate = new Date()
     let daysToSubtract = 90
     if (timeRange === "30d") {
       daysToSubtract = 30
@@ -95,12 +87,12 @@ export function TransactionDashboard() {
   return (
     <Card className="@container/card">
       <CardHeader>
-        <CardTitle>Revenue Overview</CardTitle>
+        <CardTitle>Returns Over Time</CardTitle>
         <CardDescription>
           <span className="hidden @[540px]/card:block">
-            Completed vs Pending Revenue over time
+            Number of product returns by date
           </span>
-          <span className="@[540px]/card:hidden">Revenue trends</span>
+          <span className="@[540px]/card:hidden">Returns trends</span>
         </CardDescription>
         <CardAction>
           <ToggleGroup
@@ -131,21 +123,17 @@ export function TransactionDashboard() {
         </CardAction>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        {!transactions ? (
-          <div className="h-[250px] flex items-center justify-center">
-            Loading transaction data...
+        {!returnsWithDates ? (
+          <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+            Loading returns data...
           </div>
         ) : (
           <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
-            <AreaChart data={filteredData}>
+            <BarChart data={filteredData}>
               <defs>
-                <linearGradient id="fillCompleted" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-completed)" stopOpacity={1.0} />
-                  <stop offset="95%" stopColor="var(--color-completed)" stopOpacity={0.1} />
-                </linearGradient>
-                <linearGradient id="fillPending" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-pending)" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="var(--color-pending)" stopOpacity={0.1} />
+                <linearGradient id="fillReturns" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--color-returns)" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="var(--color-returns)" stopOpacity={0.1} />
                 </linearGradient>
               </defs>
               <CartesianGrid vertical={false} />
@@ -171,21 +159,12 @@ export function TransactionDashboard() {
                   />
                 }
               />
-              <Area
-                dataKey="pending"
-                type="natural"
-                fill="url(#fillPending)"
-                stroke="var(--color-pending)"
-                stackId="a"
+              <Bar
+                dataKey="returns"
+                fill="url(#fillReturns)"
+                radius={[4, 4, 0, 0]}
               />
-              <Area
-                dataKey="completed"
-                type="natural"
-                fill="url(#fillCompleted)"
-                stroke="var(--color-completed)"
-                stackId="a"
-              />
-            </AreaChart>
+            </BarChart>
           </ChartContainer>
         )}
       </CardContent>

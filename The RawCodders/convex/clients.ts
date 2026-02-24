@@ -2,9 +2,20 @@ import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 
 export const listClients = query({
-    args: {},
-    handler: async (ctx) => {
-        return await ctx.db.query("clients").collect();
+    args: {
+        limit: v.optional(v.number()),
+        offset: v.optional(v.number()),
+    },
+    handler: async (ctx, args) => {
+        let clients = await ctx.db.query("clients").collect();
+
+        const offset = args.offset ?? 0;
+        const limit = args.limit ?? 50;
+        if (args.limit !== undefined) {
+            return clients.slice(offset, offset + args.limit);
+        }
+        
+        return clients.slice(offset);
     },
 });
 
@@ -97,5 +108,49 @@ export const deleteClient = mutation({
     },
     handler: async (ctx, args) => {
         await ctx.db.delete(args.clientId);
+    },
+});
+
+export const getClientDetailStats = query({
+    args: {
+        clientId: v.id("clients"),
+    },
+    handler: async (ctx, args) => {
+        const transactions = await ctx.db
+            .query("transactions")
+            .withIndex("by_clientId", (q) => q.eq("clientId", args.clientId))
+            .collect();
+
+        let totalSpending = 0;
+        let totalOrders = 0;
+        let totalReturns = 0;
+        const spendingByDate: Record<string, number> = {};
+
+        for (const tx of transactions) {
+            if (tx.status === "completed") {
+                totalSpending += tx.totalPrice;
+                if (tx.date) {
+                    const date = tx.date.split("T")[0];
+                    spendingByDate[date] = (spendingByDate[date] || 0) + tx.totalPrice;
+                }
+            }
+
+            for (const orderId of tx.orderId) {
+                totalOrders++;
+                const ret = await ctx.db
+                    .query("returns")
+                    .withIndex("by_orderId", (q) => q.eq("orderId", orderId))
+                    .unique();
+                if (ret) totalReturns++;
+            }
+        }
+
+        const returnRate = totalOrders > 0 ? (totalReturns / totalOrders) * 100 : 0;
+
+        const spendingOverTime = Object.entries(spendingByDate)
+            .map(([date, amount]) => ({ date, amount }))
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+        return { totalSpending, totalOrders, totalReturns, returnRate, spendingOverTime };
     },
 });

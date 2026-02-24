@@ -65,6 +65,16 @@ export default defineSchema({
     reason: ReturnReason,
     description: v.string()
   }).index("by_orderId", ["orderId"]),
+
+  opinions: defineTable({
+    productId: v.id("products"),
+    clientId: v.id("clients"),
+    rating: v.number(),
+    text: v.string(),
+    date: v.string(),
+  })
+    .index("by_productId", ["productId"])
+    .index("by_clientId", ["clientId"]),
   
   insights: defineTable({
     executive_summary: v.string(),

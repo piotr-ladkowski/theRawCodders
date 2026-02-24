@@ -18,7 +18,7 @@ import {
   IconShoppingCart,
   IconTruckReturn,
   IconClock,
-  IconSpeakerphone,
+  IconDownload,
 } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 
@@ -32,6 +32,7 @@ export default function Insights() {
 
   // Local state for the generation process
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const generateInsights = async () => {
@@ -55,6 +56,42 @@ export default function Insights() {
       setError(err instanceof Error ? err.message : "Failed to generate insights")
     } finally {
       setIsGenerating(false)
+    }
+  }
+
+  const downloadReport = async () => {
+    if (!latestInsight) return
+    setIsDownloading(true)
+    try {
+      const res = await fetch(`${AI_SERVICE_URL}/insights/report`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          executive_summary: latestInsight.executive_summary,
+          key_findings: latestInsight.key_findings,
+          recommendations: latestInsight.recommendations,
+          raw_metrics: latestInsight.raw_metrics,
+        }),
+      })
+      
+      if (!res.ok) throw new Error("Failed to generate PDF")
+      
+      const blob = await res.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `Insights_Report_${new Date().toISOString().split("T")[0]}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (err) {
+      console.error(err)
+      // Optional: show a toast error
+    } finally {
+      setIsDownloading(false)
     }
   }
 
@@ -82,13 +119,23 @@ export default function Insights() {
                 </p>
               </div>
             </div>
-            <Button 
-              onClick={generateInsights} 
-              disabled={isGenerating}
-            >
-              <IconRefresh className={`mr-2 h-4 w-4 ${isGenerating ? "animate-spin" : ""}`} />
-              {isGenerating ? "Analyzing Data..." : "Generate New Analysis"}
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                onClick={downloadReport}
+                disabled={!latestInsight || isDownloading || isGenerating}
+              >
+                <IconDownload className={`mr-2 h-4 w-4 ${isDownloading ? "animate-pulse" : ""}`} />
+                {isDownloading ? "Generating PDF..." : "Download Report"}
+              </Button>
+              <Button 
+                onClick={generateInsights} 
+                disabled={isGenerating}
+              >
+                <IconRefresh className={`mr-2 h-4 w-4 ${isGenerating ? "animate-spin" : ""}`} />
+                {isGenerating ? "Analyzing Data..." : "Generate New Analysis"}
+              </Button>
+            </div>
           </div>
 
           {error && (

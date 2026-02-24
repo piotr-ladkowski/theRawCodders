@@ -98,7 +98,8 @@ export const updateClient = mutation({
             postCode: v.string(),
             city: v.string(),
             country: v.string(),
-        }))
+        })),
+        aiSummary: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
         const { clientId, ...fields } = args;

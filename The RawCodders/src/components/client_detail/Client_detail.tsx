@@ -1,10 +1,12 @@
+// src/components/client_detail/Client_detail.tsx
 "use client"
 
+import { useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { useQuery } from "convex/react"
+import { useQuery, useMutation } from "convex/react"
 import { api } from "../../../convex/_generated/api"
 import { Id } from "../../../convex/_generated/dataModel"
-import { IconArrowLeft, IconCash, IconStar, IconTruckReturn } from "@tabler/icons-react"
+import { IconArrowLeft, IconCash, IconStar, IconTruckReturn, IconSparkles } from "@tabler/icons-react"
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 
 import { Button } from "@/components/ui/button"
@@ -24,6 +26,8 @@ import {
 } from "@/components/ui/chart"
 import { Spinner } from "@/components/ui/spinner"
 
+const AI_SERVICE_URL = import.meta.env.VITE_AI_SERVICE_URL || "http://localhost:8000"
+
 const chartConfig = {
   amount: { label: "Spending ($)", color: "oklch(50.69% .1387 329.4)" },
 } satisfies ChartConfig
@@ -40,6 +44,46 @@ export default function ClientDetail() {
     api.clients.getClientDetailStats,
     clientId ? { clientId: clientId as Id<"clients"> } : "skip"
   )
+  
+  const updateClient = useMutation(api.clients.updateClient)
+
+  const [summaryLoading, setSummaryLoading] = useState(false)
+  const [summaryError, setSummaryError] = useState<string | null>(null)
+
+  const generateSummary = async () => {
+    if (!client || !stats) return
+
+    setSummaryLoading(true)
+    setSummaryError(null)
+    try {
+      const response = await fetch(`${AI_SERVICE_URL}/client-summary`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: client.name,
+          totalSpending: stats.totalSpending,
+          totalOrders: stats.totalOrders,
+          totalReturns: stats.totalReturns,
+          returnRate: stats.returnRate,
+          averageRating: stats.averageRating,
+          totalRatings: stats.totalRatings,
+        }),
+      })
+      
+      if (!response.ok) throw new Error("Failed to generate summary")
+      
+      const data = await response.json()
+      
+      // Save it back to Convex DB as a cached value
+      await updateClient({ clientId: client._id, aiSummary: data.summary })
+
+    } catch (err) {
+      console.error("Failed to fetch client summary:", err)
+      setSummaryError("Unable to generate AI summary")
+    } finally {
+      setSummaryLoading(false)
+    }
+  }
 
   if (client === undefined || stats === undefined) {
     return (
@@ -202,6 +246,42 @@ export default function ClientDetail() {
                       />
                     </AreaChart>
                   </ChartContainer>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* AI Client Summary */}
+          <div className="px-4 lg:px-6">
+            <Card className="@container/card">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <div className="flex flex-col space-y-1">
+                  <CardTitle className="flex items-center gap-2">
+                    <IconSparkles className="size-5 text-purple-500" />
+                    AI Client Summary
+                  </CardTitle>
+                  <CardDescription>
+                    AI-generated overview of this client's activity
+                  </CardDescription>
+                </div>
+                <Button size="sm" onClick={generateSummary} disabled={summaryLoading}>
+                  {client.aiSummary ? "Regenerate" : "Generate"}
+                </Button>
+              </CardHeader>
+              <CardContent className="mt-4">
+                {summaryLoading ? (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Spinner className="size-4" />
+                    Generating summary…
+                  </div>
+                ) : summaryError ? (
+                  <p className="text-sm text-muted-foreground">{summaryError}</p>
+                ) : client.aiSummary ? (
+                  <p className="text-sm leading-relaxed">{client.aiSummary}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">
+                    Click generate to create an AI summary for this client.
+                  </p>
                 )}
               </CardContent>
             </Card>

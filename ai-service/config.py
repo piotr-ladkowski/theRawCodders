@@ -9,4 +9,6 @@ class Settings(BaseSettings):
     model_config = {"env_file": ".env.local", "extra": "ignore"}
 
 
+
 settings = Settings()
+

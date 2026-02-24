@@ -36,7 +36,7 @@ export const description = "An interactive area chart for transaction revenue"
 
 const chartConfig = {
   revenue: { label: "Revenue" },
-  completed: { label: "Completed ($)", color: "var(--color--green-500)" },
+  completed: { label: "Completed ($)", color: "var(--color-green-500)" },
   pending: { label: "Pending ($)", color: "var(--accent)" },
 } satisfies ChartConfig
 

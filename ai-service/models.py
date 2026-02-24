@@ -23,6 +23,7 @@ class ClientSummaryRequest(BaseModel):
     returnRate: float
     averageRating: Optional[float]
     totalRatings: int
+    reviewList: list[str]
 
 
 class ClientSummaryResponse(BaseModel):

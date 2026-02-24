@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom"
 import { useQuery } from "convex/react"
 import { api } from "../../../convex/_generated/api"
 import { Id } from "../../../convex/_generated/dataModel"
-import { IconArrowLeft, IconCash, IconTruckReturn } from "@tabler/icons-react"
+import { IconArrowLeft, IconCash, IconStar, IconTruckReturn } from "@tabler/icons-react"
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 
 import { Button } from "@/components/ui/button"
@@ -25,7 +25,7 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 
 const chartConfig = {
-  amount: { label: "Spending ($)", color: "hsl(var(--chart-1))" },
+  amount: { label: "Spending ($)", color: "oklch(50.69% .1387 329.4)" },
 } satisfies ChartConfig
 
 export default function ClientDetail() {
@@ -78,7 +78,7 @@ export default function ClientDetail() {
           </div>
 
           {/* Stat Cards */}
-          <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-3">
             <Card className="@container/card">
               <CardHeader>
                 <CardDescription>Total Spendings</CardDescription>
@@ -114,6 +114,29 @@ export default function ClientDetail() {
                 </div>
                 <div className="text-muted-foreground">
                   Percentage of orders returned
+                </div>
+              </CardFooter>
+            </Card>
+
+            <Card className="@container/card">
+              <CardHeader>
+                <CardDescription>Average Rating</CardDescription>
+                <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+                  {stats.averageRating !== null
+                    ? stats.averageRating.toFixed(1)
+                    : "N/A"}
+                  {stats.averageRating !== null && (
+                    <span className="text-base text-muted-foreground"> / 5</span>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardFooter className="flex-col items-start gap-1.5 text-sm">
+                <div className="line-clamp-1 flex gap-2 font-medium">
+                  <IconStar className="size-4 text-yellow-500" />
+                  {stats.totalRatings} rating{stats.totalRatings !== 1 ? "s" : ""} given
+                </div>
+                <div className="text-muted-foreground">
+                  Average across all product reviews
                 </div>
               </CardFooter>
             </Card>

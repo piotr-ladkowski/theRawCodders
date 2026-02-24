@@ -6,8 +6,8 @@ from typing import List, Dict, Any
 
 # Assuming you've updated models.py, pipeline.py, and report_generator.py
 # based on the previous Mountain Rescue steps.
-from models import AnalysisResult
-from pipeline import run_pipeline, generate_personnel_summary
+from models import AnalysisResult, DispatchRecommendationRequest, DispatchRecommendationResponse
+from pipeline import run_pipeline, generate_personnel_summary, generate_dispatch_recommendation
 from report_generator import generate_pdf
 
 import traceback
@@ -65,6 +65,17 @@ async def generate_report(data: AnalysisResult):
             media_type="application/pdf",
             headers={"Content-Disposition": "attachment; filename=Command_Insights.pdf"}
         )
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/dispatch-recommendation", response_model=DispatchRecommendationResponse)
+async def dispatch_recommendation(data: DispatchRecommendationRequest):
+    """Generate AI-powered personnel and equipment recommendations for an incident."""
+    try:
+        result = await generate_dispatch_recommendation(data.model_dump())
+        return DispatchRecommendationResponse(**result)
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))

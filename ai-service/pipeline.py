@@ -103,6 +103,55 @@ async def generate_insights(data: dict) -> AnalysisResult:
         raise e
     
 
+async def generate_dispatch_recommendation(data: dict) -> dict:
+    logger.info(f"Generating dispatch recommendation for {data['incident_type']} (severity {data['severity_level']})")
+
+    personnel_list = "\n".join(
+        f"- {p.get('name')} | Role: {p.get('role')} | Certifications: {', '.join(p.get('certifications', []))}"
+        for p in data.get("available_personnel", [])
+    )
+    equipment_list = "\n".join(
+        f"- {e.get('name')} | Category: {e.get('category', 'N/A')}"
+        for e in data.get("available_equipment", [])
+    )
+
+    prompt = f"""
+    You are an expert AI Tactical Advisor for a Mountain Rescue Command Center.
+    A new incident requires immediate dispatch. Recommend the best available personnel and equipment.
+
+    Incident Details:
+    - Type: {data['incident_type']}
+    - Severity Level: {data['severity_level']} (1=minor, 5=critical)
+    - GPS: Lat {data['gps_coordinates'].get('latitude')}, Lng {data['gps_coordinates'].get('longitude')}
+    - Weather: {data.get('weather_conditions', 'Unknown')}
+
+    Available Personnel:
+    {personnel_list or "None available"}
+
+    Available Equipment:
+    {equipment_list or "None available"}
+
+    Instructions:
+    - 'recommended_personnel': List the EXACT names of personnel to deploy (pick the most suitable based on role and certifications for this incident type). Pick 1-3 people.
+    - 'recommended_equipment': List the EXACT names of equipment to deploy (pick the most suitable for this incident type). Pick 1-4 items.
+    - 'rationale': A 1-2 sentence explanation of why these resources are the best fit.
+
+    Return ONLY a valid JSON object with these three keys.
+    """
+
+    try:
+        response = await client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "system", "content": prompt}],
+            response_format={"type": "json_object"},
+            temperature=0.3
+        )
+        return json.loads(response.choices[0].message.content)
+    except Exception as e:
+        logger.error(f"Failed to generate dispatch recommendation: {e}")
+        raise e
+
+
 async def generate_personnel_summary(personnel_data: dict) -> str:
     logger.info(f"Generating tactical summary for personnel: {personnel_data.get('name')}")
     

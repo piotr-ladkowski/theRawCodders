@@ -67,6 +67,7 @@ export default function ClientDetail() {
           returnRate: stats.returnRate,
           averageRating: stats.averageRating,
           totalRatings: stats.totalRatings,
+          reviewList: stats.reviewList,
         }),
       })
       

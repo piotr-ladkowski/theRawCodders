@@ -164,6 +164,8 @@ export const getClientDetailStats = query({
                 : null;
         const totalRatings = opinions.length;
 
-        return { totalSpending, totalOrders, totalReturns, returnRate, spendingOverTime, averageRating, totalRatings };
+        const reviewList = opinions.map(o => `Product ${o.productId}: ${o.rating} stars - ${o.description}`);
+
+        return { totalSpending, totalOrders, totalReturns, returnRate, spendingOverTime, averageRating, totalRatings, reviewList };
     },
 });

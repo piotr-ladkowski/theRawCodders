@@ -21,8 +21,11 @@ async def _fetch_table(client: httpx.AsyncClient, function_path: str) -> list[di
     value = data.get("value", data) if isinstance(data, dict) else data
 
     # Pagination wrapping: { "data": [...], "total": ... }
-    if isinstance(value, dict) and "data" in value and isinstance(value["data"], list):
-        return value["data"]
+    if isinstance(value, dict):
+        if "data" in value and isinstance(value["data"], list):
+            return value["data"]
+        if "transactions" in value and isinstance(value["transactions"], list):
+            return value["transactions"]
 
     return value
 

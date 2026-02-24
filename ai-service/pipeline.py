@@ -56,7 +56,6 @@ async def run_pipeline() -> dict:
     data = await fetch_all()
 
     # Run all analyses
-    # Run all analyses
     raw_metrics = {
         "temporal": analyze_temporal(data.get("transactions", [])),  # list of transaction rows
         "demographics": analyze_demographics(data),                  # full dict of tables

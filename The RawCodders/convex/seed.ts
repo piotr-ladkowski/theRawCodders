@@ -382,10 +382,13 @@ export const seed = mutation({
     // 2. Seed Clients
     const clients = await seedClients(ctx, 200);
 
-    // 3. Seed Transactions (Target 1000 transactions, ~2000 orders, ~30 returns in last 3 months)
+    // 3. Seed Transactions
     await seedTransactionsFull(ctx, clients, products, 1000, 30);
 
-    return "Database seeded successfully (Top-up: 1k transactions, ~2k orders, ~30 returns).";
+    // 4. Seed organic reviews/opinions  <-- missing in your current file
+    await seedOpinionsOrganic(ctx, 50);
+
+    return "Database seeded successfully (Top-up: 1k transactions, ~2k orders, ~30 returns, ~50 organic opinions).";
   },
 });
 

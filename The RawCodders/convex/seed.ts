@@ -1,427 +1,845 @@
 import { mutation } from "./_generated/server";
 
+// ============================================================
+// Deterministic, sensible demo seed for GOPR-style schema
+// - Small dataset
+// - Hardcoded incidents (20 total, 2 active)
+// - Upsert personnel/equipment by email/name
+// - Seed incidents/dispatches/logs/reports only if empty
+// ============================================================
+
 // -----------------------------
-// Seed Data
+// Types (local)
 // -----------------------------
 
-const NAMES = [
-  "Jan Kowalski",
-  "Piotr Nowak",
-  "Anna Wiśniewska",
-  "Maciej Wójcik",
-  "Tomasz Kamiński",
-  "Katarzyna Lewandowska",
-  "Michał Zieliński",
-] as const;
+type IncidentTypeT =
+  | "Avalanche"
+  | "Missing Person"
+  | "Medical Emergency"
+  | "Fall / Injury"
+  | "Other";
 
-const ROLES = ["Rescuer", "Medic", "Pilot", "Coordinator"] as const;
+type IncidentStatusT = "standby" | "active" | "resolved";
 
-const CERTIFICATIONS = [
-  "Avalanche L1",
-  "Avalanche L2",
-  "Rope Rescue Pro",
-  "Paramedic",
-  "Heli-Pilot",
-  "K9 Handler",
-] as const;
-
-const BASES = [
-  "Zakopane HQ",
-  "Morskie Oko Station",
-  "Dolina Pięciu Stawów",
-  "Kasprowy Wierch",
-] as const;
-
-const EQ_CATEGORIES = [
-  "Vehicle",
-  "Medical",
-  "Rope/Climbing",
-  "Communication",
-  "Search K9",
-] as const;
-
-const EQ_NAMES = [
-  "Defibrillator AED",
-  "Skidoo Snowmobile",
-  "Rescue Helicopter Sokół",
-  "Avalanche Probe",
-  "Thermal Drone",
-  "Stretcher",
-  "VHF Radio",
-] as const;
-
-const INCIDENT_TYPES = [
-  "Avalanche",
-  "Missing Person",
-  "Medical Emergency",
-  "Fall / Injury",
-  "Other",
-] as const;
-
-const WEATHER = [
-  "Clear, -5C",
-  "Heavy Snow, Low Visibility",
-  "High Winds, -15C",
-  "Sunny, 2C",
-  "Foggy, 0C",
-] as const;
-
-const ISSUE_TYPES = [
-  "Battery Failure",
-  "Engine Malfunction",
-  "Structural Damage",
-  "Calibration Drift",
-  "Wear and Tear",
-  "Software Error",
-  "Hydraulic Leak",
-] as const;
-
-const MAINTENANCE_DESCRIPTIONS = [
-  "Battery pack depleted below safe threshold after extended cold-weather operation.",
-  "Engine stalling intermittently during high-altitude runs; needs carburetor inspection.",
-  "Frame cracked after impact during last rescue mission; requires welding.",
-  "GPS module showing 15m drift; recalibration and firmware update needed.",
-  "Rope abrasion detected near carabiner attachment point; replacement scheduled.",
-  "On-board diagnostics software crash on startup; reinstallation required.",
-  "Hydraulic fluid leak found at main lift cylinder seal.",
-  "Radio antenna connector corroded; signal intermittent in bad weather.",
-  "Stretcher locking mechanism jammed; pivot bolt replacement needed.",
-  "Drone propeller blade chipped after landing in rocky terrain.",
-  "Defibrillator self-test failed; electrode pads expired and need replacement.",
-  "Snowmobile track tension out of spec; adjustment and track inspection required.",
-] as const;
-
-// Optional mission reports seed text
-const MISSION_REPORT_NOTES = [
-  "Successful response. Team reached casualty quickly despite difficult terrain.",
-  "Search area expanded due to low visibility. Coordination with base remained stable.",
-  "Evacuation completed safely. Weather conditions slowed descent.",
-  "Medical stabilization performed on site before transport.",
-  "False alarm after field verification; no injuries found.",
-  "K9 support helped narrow the search zone significantly.",
-  "High wind conditions required route adjustment during approach.",
-  "Minor communication issues at first, resolved after radio channel switch.",
-] as const;
-
-const ACTIVE_INCIDENT_COUNT = 2; // change to 1 if you want exactly one active incident
-
-const INCIDENT_TEMPLATES: Array<{
-  type: "Avalanche" | "Missing Person" | "Medical Emergency" | "Fall / Injury" | "Other";
-  severityLevel: number;
-  weatherConditions: string;
-  gpsCoordinates: { latitude: number; longitude: number };
-  notesHint?: string;
-}> = [
-  {
-    type: "Missing Person",
-    severityLevel: 4,
-    weatherConditions: "Foggy, 0C",
-    gpsCoordinates: { latitude: 49.2501, longitude: 19.9342 }, // okolice Kasprowy
-    notesHint: "Hiker overdue after planned descent from Kasprowy Wierch.",
-  },
-  {
-    type: "Medical Emergency",
-    severityLevel: 5,
-    weatherConditions: "Clear, -3C",
-    gpsCoordinates: { latitude: 49.2326, longitude: 20.0083 }, // okolice Morskie Oko
-    notesHint: "Chest pain and collapse reported on trail near Morskie Oko.",
-  },
-  {
-    type: "Fall / Injury",
-    severityLevel: 4,
-    weatherConditions: "High Winds, -8C",
-    gpsCoordinates: { latitude: 49.2248, longitude: 19.9819 },
-    notesHint: "Suspected ankle fracture after slip on icy section.",
-  },
-  {
-    type: "Avalanche",
-    severityLevel: 5,
-    weatherConditions: "Heavy Snow, Low Visibility",
-    gpsCoordinates: { latitude: 49.2167, longitude: 20.0402 },
-    notesHint: "Small avalanche reported; one possible burial.",
-  },
-  {
-    type: "Medical Emergency",
-    severityLevel: 3,
-    weatherConditions: "Sunny, 2C",
-    gpsCoordinates: { latitude: 49.2681, longitude: 19.9812 },
-    notesHint: "Exhaustion and dehydration on ascent route.",
-  },
-  {
-    type: "Missing Person",
-    severityLevel: 3,
-    weatherConditions: "Clear, -6C",
-    gpsCoordinates: { latitude: 49.2562, longitude: 19.9007 },
-    notesHint: "Skier not returned before dusk.",
-  },
-  {
-    type: "Fall / Injury",
-    severityLevel: 2,
-    weatherConditions: "Clear, -1C",
-    gpsCoordinates: { latitude: 49.2417, longitude: 19.9958 },
-    notesHint: "Minor fall with wrist pain near marked trail.",
-  },
-  {
-    type: "Other",
-    severityLevel: 2,
-    weatherConditions: "Foggy, 1C",
-    gpsCoordinates: { latitude: 49.2304, longitude: 19.9614 },
-    notesHint: "False alarm / distress signal verification.",
-  },
-  {
-    type: "Medical Emergency",
-    severityLevel: 4,
-    weatherConditions: "High Winds, -10C",
-    gpsCoordinates: { latitude: 49.2489, longitude: 20.0215 },
-    notesHint: "Hypothermia symptoms in exposed terrain.",
-  },
-  {
-    type: "Missing Person",
-    severityLevel: 3,
-    weatherConditions: "Foggy, -2C",
-    gpsCoordinates: { latitude: 49.2145, longitude: 19.9533 },
-    notesHint: "Lost trail in low visibility after sunset.",
-  },
-  {
-    type: "Fall / Injury",
-    severityLevel: 3,
-    weatherConditions: "Clear, 1C",
-    gpsCoordinates: { latitude: 49.2614, longitude: 19.9448 },
-    notesHint: "Knee injury during descent; unable to continue.",
-  },
-  {
-    type: "Medical Emergency",
-    severityLevel: 2,
-    weatherConditions: "Sunny, 4C",
-    gpsCoordinates: { latitude: 49.2369, longitude: 20.0141 },
-    notesHint: "Mild altitude-related symptoms and weakness.",
-  },
-  {
-    type: "Other",
-    severityLevel: 1,
-    weatherConditions: "Clear, 0C",
-    gpsCoordinates: { latitude: 49.2277, longitude: 19.9752 },
-    notesHint: "Tourist group requested navigation assistance.",
-  },
-  {
-    type: "Avalanche",
-    severityLevel: 4,
-    weatherConditions: "Heavy Snow, Low Visibility",
-    gpsCoordinates: { latitude: 49.2201, longitude: 20.0268 },
-    notesHint: "Avalanche debris across route; area assessment required.",
-  },
-  {
-    type: "Fall / Injury",
-    severityLevel: 5,
-    weatherConditions: "High Winds, -12C",
-    gpsCoordinates: { latitude: 49.2438, longitude: 19.9897 },
-    notesHint: "Serious fall in steep terrain, possible spinal injury.",
-  },
-  {
-    type: "Medical Emergency",
-    severityLevel: 3,
-    weatherConditions: "Foggy, -1C",
-    gpsCoordinates: { latitude: 49.2524, longitude: 19.9726 },
-    notesHint: "Asthma exacerbation reported during hike.",
-  },
-  {
-    type: "Missing Person",
-    severityLevel: 2,
-    weatherConditions: "Clear, -4C",
-    gpsCoordinates: { latitude: 49.2387, longitude: 19.9289 },
-    notesHint: "Delayed return; phone battery dead, likely route deviation.",
-  },
-  {
-    type: "Other",
-    severityLevel: 2,
-    weatherConditions: "Sunny, 3C",
-    gpsCoordinates: { latitude: 49.2455, longitude: 20.0036 },
-    notesHint: "Equipment recovery support requested by trail crew.",
-  },
-  {
-    type: "Fall / Injury",
-    severityLevel: 3,
-    weatherConditions: "Clear, -2C",
-    gpsCoordinates: { latitude: 49.2199, longitude: 19.9474 },
-    notesHint: "Shoulder dislocation after slip on snow patch.",
-  },
-  {
-    type: "Medical Emergency",
-    severityLevel: 4,
-    weatherConditions: "High Winds, -7C",
-    gpsCoordinates: { latitude: 49.2333, longitude: 19.9911 },
-    notesHint: "Severe allergic reaction reported at shelter approach.",
-  },
-];
+type EquipmentStatusT = "Available" | "In Use" | "Maintenance" | "Retired";
 
 // -----------------------------
 // Helpers
 // -----------------------------
 
-function randomInt(min: number, max: number) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function randomItem<T>(arr: readonly T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function randomDate(start: Date, end: Date): string {
-  return new Date(
-    start.getTime() + Math.random() * (end.getTime() - start.getTime())
-  ).toISOString();
-}
-
-function monthsAgo(n: number): Date {
-  const d = new Date();
-  d.setMonth(d.getMonth() - n);
-  return d;
-}
-
-function randomRecentDate(monthsBack: number): string {
-  return randomDate(monthsAgo(monthsBack), new Date());
-}
-
-function daysAgo(n: number): Date {
+function daysAgoIso(n: number, hour = 9, minute = 0): string {
   const d = new Date();
   d.setDate(d.getDate() - n);
-  return d;
-}
-
-function uniqueRandomItems<T>(arr: readonly T[], count: number): T[] {
-  const copy = [...arr];
-  const out: T[] = [];
-  while (copy.length > 0 && out.length < count) {
-    const idx = randomInt(0, copy.length - 1);
-    out.push(copy[idx]);
-    copy.splice(idx, 1);
-  }
-  return out;
-}
-
-function addHours(dateIso: string, minHours: number, maxHours: number): string {
-  const d = new Date(dateIso);
-  d.setHours(d.getHours() + randomInt(minHours, maxHours));
+  d.setHours(hour, minute, 0, 0);
   return d.toISOString();
 }
 
+function addHours(dateIso: string, hours: number): string {
+  const d = new Date(dateIso);
+  d.setHours(d.getHours() + hours);
+  return d.toISOString();
+}
+
+function addDays(dateIso: string, days: number, hour = 10, minute = 0): string {
+  const d = new Date(dateIso);
+  d.setDate(d.getDate() + days);
+  d.setHours(hour, minute, 0, 0);
+  return d.toISOString();
+}
+
+function clamp<T>(arr: T[], max: number): T[] {
+  return arr.slice(0, Math.max(0, max));
+}
+
 // -----------------------------
-// Ensure / Upsert Personnel (ALWAYS there)
+// Hardcoded Personnel (sensible, varied)
 // -----------------------------
 
-async function ensurePersonnel(ctx: any, targetTotal: number) {
-  let createdPersonnel = 0;
-  let updatedPersonnel = 0;
-  const seededPersonnelIds: any[] = [];
+const PERSONNEL_SEED = [
+  {
+    email: "jan.kowalski@gopr.pl",
+    name: "Jan Kowalski",
+    phone: "+48 501 101 101",
+    role: "Coordinator",
+    certifications: ["Avalanche L2", "Rope Rescue Pro"],
+    baseStation: "Zakopane HQ",
+    isAvailable: true,
+    aiProfileSummary: "Senior field coordinator with strong avalanche response and route planning experience.",
+  },
+  {
+    email: "anna.wisniewska@gopr.pl",
+    name: "Anna Wiśniewska",
+    phone: "+48 501 101 102",
+    role: "Medic",
+    certifications: ["Paramedic", "Avalanche L1"],
+    baseStation: "Zakopane HQ",
+    isAvailable: true,
+    aiProfileSummary: "Mountain medic focused on trauma stabilization and hypothermia response.",
+  },
+  {
+    email: "piotr.nowak@gopr.pl",
+    name: "Piotr Nowak",
+    phone: "+48 501 101 103",
+    role: "Rescuer",
+    certifications: ["Rope Rescue Pro", "Avalanche L2"],
+    baseStation: "Kasprowy Wierch",
+    isAvailable: true,
+    aiProfileSummary: "Technical rescuer experienced in steep terrain evacuations.",
+  },
+  {
+    email: "michal.zielinski@gopr.pl",
+    name: "Michał Zieliński",
+    phone: "+48 501 101 104",
+    role: "Pilot",
+    certifications: ["Heli-Pilot"],
+    baseStation: "Zakopane HQ",
+    isAvailable: true,
+    aiProfileSummary: "Helicopter pilot supporting rapid extraction and aerial search.",
+  },
+  {
+    email: "katarzyna.lewandowska@gopr.pl",
+    name: "Katarzyna Lewandowska",
+    phone: "+48 501 101 105",
+    role: "Rescuer",
+    certifications: ["K9 Handler", "Avalanche L1"],
+    baseStation: "Morskie Oko Station",
+    isAvailable: true,
+    aiProfileSummary: "K9 search specialist with experience in missing person operations.",
+  },
+  {
+    email: "maciej.wojcik@gopr.pl",
+    name: "Maciej Wójcik",
+    phone: "+48 501 101 106",
+    role: "Rescuer",
+    certifications: ["Rope Rescue Pro"],
+    baseStation: "Dolina Pięciu Stawów",
+    isAvailable: true,
+    aiProfileSummary: "Rescuer focused on rope systems and stretcher-based evacuation.",
+  },
+  {
+    email: "tomasz.kaminski@gopr.pl",
+    name: "Tomasz Kamiński",
+    phone: "+48 501 101 107",
+    role: "Rescuer",
+    certifications: ["Avalanche L1"],
+    baseStation: "Kasprowy Wierch",
+    isAvailable: false,
+    aiProfileSummary: "Field rescuer supporting winter patrol and incident response.",
+  },
+  {
+    email: "ewa.mazur@gopr.pl",
+    name: "Ewa Mazur",
+    phone: "+48 501 101 108",
+    role: "Medic",
+    certifications: ["Paramedic"],
+    baseStation: "Morskie Oko Station",
+    isAvailable: true,
+    aiProfileSummary: "Paramedic supporting field triage and patient transport preparation.",
+  },
+  {
+    email: "lukasz.kaczmarek@gopr.pl",
+    name: "Łukasz Kaczmarek",
+    phone: "+48 501 101 109",
+    role: "Coordinator",
+    certifications: ["Avalanche L1"],
+    baseStation: "Zakopane HQ",
+    isAvailable: true,
+    aiProfileSummary: "Shift coordinator handling dispatch, communications and resource allocation.",
+  },
+  {
+    email: "magdalena.krupa@gopr.pl",
+    name: "Magdalena Krupa",
+    phone: "+48 501 101 110",
+    role: "Rescuer",
+    certifications: ["Rope Rescue Pro", "Avalanche L1"],
+    baseStation: "Dolina Pięciu Stawów",
+    isAvailable: true,
+    aiProfileSummary: "Rescuer experienced in mixed terrain approach and evacuation support.",
+  },
+  {
+    email: "pawel.sikora@gopr.pl",
+    name: "Paweł Sikora",
+    phone: "+48 501 101 111",
+    role: "Rescuer",
+    certifications: ["K9 Handler"],
+    baseStation: "Zakopane HQ",
+    isAvailable: true,
+    aiProfileSummary: "Search K9 handler supporting missing person and area search missions.",
+  },
+  {
+    email: "dorota.nowicka@gopr.pl",
+    name: "Dorota Nowicka",
+    phone: "+48 501 101 112",
+    role: "Medic",
+    certifications: ["Paramedic", "Avalanche L1"],
+    baseStation: "Kasprowy Wierch",
+    isAvailable: false,
+    aiProfileSummary: "Field medic with experience in winter exposure and trauma care.",
+  },
+  {
+    email: "jakub.adamczyk@gopr.pl",
+    name: "Jakub Adamczyk",
+    phone: "+48 501 101 113",
+    role: "Rescuer",
+    certifications: ["Avalanche L2", "Rope Rescue Pro"],
+    baseStation: "Morskie Oko Station",
+    isAvailable: true,
+    aiProfileSummary: "Senior rescuer with strong winter terrain and avalanche rescue skills.",
+  },
+  {
+    email: "olga.jablonska@gopr.pl",
+    name: "Olga Jabłońska",
+    phone: "+48 501 101 114",
+    role: "Coordinator",
+    certifications: ["Avalanche L1"],
+    baseStation: "Zakopane HQ",
+    isAvailable: true,
+    aiProfileSummary: "Operations coordinator supporting incident logging and communications.",
+  },
+  {
+    email: "sebastian.wrona@gopr.pl",
+    name: "Sebastian Wrona",
+    phone: "+48 501 101 115",
+    role: "Rescuer",
+    certifications: ["Rope Rescue Pro"],
+    baseStation: "Kasprowy Wierch",
+    isAvailable: true,
+    aiProfileSummary: "Rescuer supporting technical extraction in rocky terrain.",
+  },
+  {
+    email: "karolina.zalewska@gopr.pl",
+    name: "Karolina Zalewska",
+    phone: "+48 501 101 116",
+    role: "Medic",
+    certifications: ["Paramedic"],
+    baseStation: "Dolina Pięciu Stawów",
+    isAvailable: true,
+    aiProfileSummary: "Medic focused on stabilization and handoff for evacuation transport.",
+  },
+] as const;
 
-  for (let i = 0; i < targetTotal; i++) {
-    const name = `${randomItem(NAMES)} ${i + 1}`;
-    const email = `rescuer${i}@gopr.pl`;
-    const certs = uniqueRandomItems(CERTIFICATIONS, randomInt(1, 3));
+// -----------------------------
+// Hardcoded Equipment (sensible, small)
+// -----------------------------
 
-    const existingMatches = await ctx.db
-      .query("personnel")
-      .withIndex("by_email", (q: any) => q.eq("email", email))
-      .collect();
+const EQUIPMENT_SEED: Array<{
+  name: string;
+  category: string;
+  status: EquipmentStatusT;
+  lastInspectedDaysAgo: number;
+  image?: string;
+}> = [
+  { name: "Rescue Helicopter Sokół (EQ-001)", category: "Vehicle", status: "Available", lastInspectedDaysAgo: 3 },
+  { name: "Skidoo Snowmobile A (EQ-002)", category: "Vehicle", status: "Available", lastInspectedDaysAgo: 7 },
+  { name: "Skidoo Snowmobile B (EQ-003)", category: "Vehicle", status: "In Use", lastInspectedDaysAgo: 5 },
+  { name: "ATV Utility Quad (EQ-004)", category: "Vehicle", status: "Available", lastInspectedDaysAgo: 12 },
 
-    const existing = existingMatches[0] ?? null;
+  { name: "Defibrillator AED 1 (EQ-005)", category: "Medical", status: "Available", lastInspectedDaysAgo: 4 },
+  { name: "Defibrillator AED 2 (EQ-006)", category: "Medical", status: "Maintenance", lastInspectedDaysAgo: 16 },
+  { name: "Trauma Kit Alpha (EQ-007)", category: "Medical", status: "Available", lastInspectedDaysAgo: 6 },
+  { name: "Trauma Kit Bravo (EQ-008)", category: "Medical", status: "In Use", lastInspectedDaysAgo: 9 },
+  { name: "Stretcher Basket 1 (EQ-009)", category: "Medical", status: "Available", lastInspectedDaysAgo: 11 },
+
+  { name: "Rope Kit Alpine 1 (EQ-010)", category: "Rope/Climbing", status: "Available", lastInspectedDaysAgo: 8 },
+  { name: "Rope Kit Alpine 2 (EQ-011)", category: "Rope/Climbing", status: "Maintenance", lastInspectedDaysAgo: 19 },
+  { name: "Avalanche Probe Set (EQ-012)", category: "Rope/Climbing", status: "Available", lastInspectedDaysAgo: 10 },
+
+  { name: "VHF Radio Set A (EQ-013)", category: "Communication", status: "Available", lastInspectedDaysAgo: 14 },
+  { name: "VHF Radio Set B (EQ-014)", category: "Communication", status: "Available", lastInspectedDaysAgo: 15 },
+  { name: "Base Repeater Unit (EQ-015)", category: "Communication", status: "In Use", lastInspectedDaysAgo: 22 },
+
+  { name: "Thermal Drone 1 (EQ-016)", category: "Search K9", status: "Available", lastInspectedDaysAgo: 6 },
+  { name: "K9 Unit Harness Set (EQ-017)", category: "Search K9", status: "Available", lastInspectedDaysAgo: 13 },
+  { name: "Search Beacon Trainer (EQ-018)", category: "Search K9", status: "Retired", lastInspectedDaysAgo: 40 },
+];
+
+// -----------------------------
+// Hardcoded Incidents (20 total, sensible, recent)
+// 2 active, 1 standby, rest resolved
+// -----------------------------
+
+const ACTIVE_INCIDENT_COUNT = 2;
+
+const INCIDENT_TEMPLATES: Array<{
+  code: string;
+  type: IncidentTypeT;
+  severityLevel: number;
+  weatherConditions: string;
+  gpsCoordinates: { latitude: number; longitude: number };
+  daysBack: number;
+  status: IncidentStatusT;
+  suggestedPersonnelEmails: string[];
+  suggestedEquipmentNames: string[];
+}> = [
+  // Active (2)
+  {
+    code: "INC-001",
+    type: "Missing Person",
+    severityLevel: 4,
+    weatherConditions: "Foggy, 0C",
+    gpsCoordinates: { latitude: 49.2501, longitude: 19.9342 },
+    daysBack: 0,
+    status: "active",
+    suggestedPersonnelEmails: [
+      "jan.kowalski@gopr.pl",
+      "katarzyna.lewandowska@gopr.pl",
+      "pawel.sikora@gopr.pl",
+      "lukasz.kaczmarek@gopr.pl",
+    ],
+    suggestedEquipmentNames: ["Thermal Drone 1 (EQ-016)", "VHF Radio Set A (EQ-013)"],
+  },
+  {
+    code: "INC-002",
+    type: "Medical Emergency",
+    severityLevel: 5,
+    weatherConditions: "Clear, -3C",
+    gpsCoordinates: { latitude: 49.2326, longitude: 20.0083 },
+    daysBack: 1,
+    status: "active",
+    suggestedPersonnelEmails: [
+      "anna.wisniewska@gopr.pl",
+      "ewa.mazur@gopr.pl",
+      "michal.zielinski@gopr.pl",
+      "jakub.adamczyk@gopr.pl",
+    ],
+    suggestedEquipmentNames: ["Rescue Helicopter Sokół (EQ-001)", "Defibrillator AED 1 (EQ-005)", "Trauma Kit Alpha (EQ-007)"],
+  },
+
+  // Standby (1)
+  {
+    code: "INC-003",
+    type: "Avalanche",
+    severityLevel: 4,
+    weatherConditions: "Heavy Snow, Low Visibility",
+    gpsCoordinates: { latitude: 49.2201, longitude: 20.0268 },
+    daysBack: 2,
+    status: "standby",
+    suggestedPersonnelEmails: [
+      "piotr.nowak@gopr.pl",
+      "jakub.adamczyk@gopr.pl",
+      "maciej.wojcik@gopr.pl",
+      "olga.jablonska@gopr.pl",
+    ],
+    suggestedEquipmentNames: ["Avalanche Probe Set (EQ-012)", "Skidoo Snowmobile A (EQ-002)"],
+  },
+
+  // Resolved (17)
+  {
+    code: "INC-004",
+    type: "Fall / Injury",
+    severityLevel: 4,
+    weatherConditions: "High Winds, -8C",
+    gpsCoordinates: { latitude: 49.2248, longitude: 19.9819 },
+    daysBack: 5,
+    status: "resolved",
+    suggestedPersonnelEmails: ["piotr.nowak@gopr.pl", "maciej.wojcik@gopr.pl", "anna.wisniewska@gopr.pl"],
+    suggestedEquipmentNames: ["Stretcher Basket 1 (EQ-009)", "Rope Kit Alpine 1 (EQ-010)"],
+  },
+  {
+    code: "INC-005",
+    type: "Medical Emergency",
+    severityLevel: 3,
+    weatherConditions: "Sunny, 2C",
+    gpsCoordinates: { latitude: 49.2681, longitude: 19.9812 },
+    daysBack: 9,
+    status: "resolved",
+    suggestedPersonnelEmails: ["karolina.zalewska@gopr.pl", "sebastian.wrona@gopr.pl", "olga.jablonska@gopr.pl"],
+    suggestedEquipmentNames: ["Trauma Kit Bravo (EQ-008)", "VHF Radio Set B (EQ-014)"],
+  },
+  {
+    code: "INC-006",
+    type: "Missing Person",
+    severityLevel: 3,
+    weatherConditions: "Clear, -6C",
+    gpsCoordinates: { latitude: 49.2562, longitude: 19.9007 },
+    daysBack: 13,
+    status: "resolved",
+    suggestedPersonnelEmails: ["katarzyna.lewandowska@gopr.pl", "pawel.sikora@gopr.pl", "lukasz.kaczmarek@gopr.pl"],
+    suggestedEquipmentNames: ["Thermal Drone 1 (EQ-016)", "VHF Radio Set A (EQ-013)"],
+  },
+  {
+    code: "INC-007",
+    type: "Fall / Injury",
+    severityLevel: 2,
+    weatherConditions: "Clear, -1C",
+    gpsCoordinates: { latitude: 49.2417, longitude: 19.9958 },
+    daysBack: 16,
+    status: "resolved",
+    suggestedPersonnelEmails: ["magdalena.krupa@gopr.pl", "karolina.zalewska@gopr.pl"],
+    suggestedEquipmentNames: ["Stretcher Basket 1 (EQ-009)"],
+  },
+  {
+    code: "INC-008",
+    type: "Other",
+    severityLevel: 1,
+    weatherConditions: "Foggy, 1C",
+    gpsCoordinates: { latitude: 49.2304, longitude: 19.9614 },
+    daysBack: 20,
+    status: "resolved",
+    suggestedPersonnelEmails: ["olga.jablonska@gopr.pl", "tomasz.kaminski@gopr.pl"],
+    suggestedEquipmentNames: ["VHF Radio Set B (EQ-014)"],
+  },
+  {
+    code: "INC-009",
+    type: "Medical Emergency",
+    severityLevel: 4,
+    weatherConditions: "High Winds, -10C",
+    gpsCoordinates: { latitude: 49.2489, longitude: 20.0215 },
+    daysBack: 24,
+    status: "resolved",
+    suggestedPersonnelEmails: ["anna.wisniewska@gopr.pl", "dorota.nowicka@gopr.pl", "piotr.nowak@gopr.pl"],
+    suggestedEquipmentNames: ["Defibrillator AED 1 (EQ-005)", "Trauma Kit Alpha (EQ-007)"],
+  },
+  {
+    code: "INC-010",
+    type: "Missing Person",
+    severityLevel: 3,
+    weatherConditions: "Foggy, -2C",
+    gpsCoordinates: { latitude: 49.2145, longitude: 19.9533 },
+    daysBack: 28,
+    status: "resolved",
+    suggestedPersonnelEmails: ["pawel.sikora@gopr.pl", "katarzyna.lewandowska@gopr.pl", "jan.kowalski@gopr.pl"],
+    suggestedEquipmentNames: ["K9 Unit Harness Set (EQ-017)", "Thermal Drone 1 (EQ-016)"],
+  },
+  {
+    code: "INC-011",
+    type: "Fall / Injury",
+    severityLevel: 3,
+    weatherConditions: "Clear, 1C",
+    gpsCoordinates: { latitude: 49.2614, longitude: 19.9448 },
+    daysBack: 33,
+    status: "resolved",
+    suggestedPersonnelEmails: ["sebastian.wrona@gopr.pl", "karolina.zalewska@gopr.pl", "lukasz.kaczmarek@gopr.pl"],
+    suggestedEquipmentNames: ["Rope Kit Alpine 1 (EQ-010)", "Stretcher Basket 1 (EQ-009)"],
+  },
+  {
+    code: "INC-012",
+    type: "Medical Emergency",
+    severityLevel: 2,
+    weatherConditions: "Sunny, 4C",
+    gpsCoordinates: { latitude: 49.2369, longitude: 20.0141 },
+    daysBack: 37,
+    status: "resolved",
+    suggestedPersonnelEmails: ["ewa.mazur@gopr.pl", "maciej.wojcik@gopr.pl"],
+    suggestedEquipmentNames: ["Trauma Kit Alpha (EQ-007)"],
+  },
+  {
+    code: "INC-013",
+    type: "Other",
+    severityLevel: 1,
+    weatherConditions: "Clear, 0C",
+    gpsCoordinates: { latitude: 49.2277, longitude: 19.9752 },
+    daysBack: 42,
+    status: "resolved",
+    suggestedPersonnelEmails: ["olga.jablonska@gopr.pl", "jakub.adamczyk@gopr.pl"],
+    suggestedEquipmentNames: ["VHF Radio Set A (EQ-013)"],
+  },
+  {
+    code: "INC-014",
+    type: "Avalanche",
+    severityLevel: 5,
+    weatherConditions: "Heavy Snow, Low Visibility",
+    gpsCoordinates: { latitude: 49.2167, longitude: 20.0402 },
+    daysBack: 47,
+    status: "resolved",
+    suggestedPersonnelEmails: ["piotr.nowak@gopr.pl", "jakub.adamczyk@gopr.pl", "anna.wisniewska@gopr.pl", "michal.zielinski@gopr.pl"],
+    suggestedEquipmentNames: ["Rescue Helicopter Sokół (EQ-001)", "Avalanche Probe Set (EQ-012)", "Skidoo Snowmobile B (EQ-003)"],
+  },
+  {
+    code: "INC-015",
+    type: "Fall / Injury",
+    severityLevel: 5,
+    weatherConditions: "High Winds, -12C",
+    gpsCoordinates: { latitude: 49.2438, longitude: 19.9897 },
+    daysBack: 53,
+    status: "resolved",
+    suggestedPersonnelEmails: ["piotr.nowak@gopr.pl", "maciej.wojcik@gopr.pl", "karolina.zalewska@gopr.pl", "jan.kowalski@gopr.pl"],
+    suggestedEquipmentNames: ["Rope Kit Alpine 2 (EQ-011)", "Stretcher Basket 1 (EQ-009)"],
+  },
+  {
+    code: "INC-016",
+    type: "Medical Emergency",
+    severityLevel: 3,
+    weatherConditions: "Foggy, -1C",
+    gpsCoordinates: { latitude: 49.2524, longitude: 19.9726 },
+    daysBack: 59,
+    status: "resolved",
+    suggestedPersonnelEmails: ["dorota.nowicka@gopr.pl", "sebastian.wrona@gopr.pl", "olga.jablonska@gopr.pl"],
+    suggestedEquipmentNames: ["Defibrillator AED 1 (EQ-005)", "VHF Radio Set B (EQ-014)"],
+  },
+  {
+    code: "INC-017",
+    type: "Missing Person",
+    severityLevel: 2,
+    weatherConditions: "Clear, -4C",
+    gpsCoordinates: { latitude: 49.2387, longitude: 19.9289 },
+    daysBack: 64,
+    status: "resolved",
+    suggestedPersonnelEmails: ["pawel.sikora@gopr.pl", "katarzyna.lewandowska@gopr.pl"],
+    suggestedEquipmentNames: ["K9 Unit Harness Set (EQ-017)"],
+  },
+  {
+    code: "INC-018",
+    type: "Other",
+    severityLevel: 2,
+    weatherConditions: "Sunny, 3C",
+    gpsCoordinates: { latitude: 49.2455, longitude: 20.0036 },
+    daysBack: 70,
+    status: "resolved",
+    suggestedPersonnelEmails: ["lukasz.kaczmarek@gopr.pl", "magdalena.krupa@gopr.pl"],
+    suggestedEquipmentNames: ["ATV Utility Quad (EQ-004)"],
+  },
+  {
+    code: "INC-019",
+    type: "Fall / Injury",
+    severityLevel: 3,
+    weatherConditions: "Clear, -2C",
+    gpsCoordinates: { latitude: 49.2199, longitude: 19.9474 },
+    daysBack: 77,
+    status: "resolved",
+    suggestedPersonnelEmails: ["sebastian.wrona@gopr.pl", "ewa.mazur@gopr.pl", "jakub.adamczyk@gopr.pl"],
+    suggestedEquipmentNames: ["Rope Kit Alpine 1 (EQ-010)", "Trauma Kit Bravo (EQ-008)"],
+  },
+  {
+    code: "INC-020",
+    type: "Medical Emergency",
+    severityLevel: 4,
+    weatherConditions: "High Winds, -7C",
+    gpsCoordinates: { latitude: 49.2333, longitude: 19.9911 },
+    daysBack: 84,
+    status: "resolved",
+    suggestedPersonnelEmails: ["anna.wisniewska@gopr.pl", "karolina.zalewska@gopr.pl", "jan.kowalski@gopr.pl"],
+    suggestedEquipmentNames: ["Defibrillator AED 2 (EQ-006)", "Trauma Kit Alpha (EQ-007)"],
+  },
+];
+
+// -----------------------------
+// Hardcoded Maintenance Logs (sensible, recent)
+// -----------------------------
+
+const MAINTENANCE_LOG_SEED: Array<{
+  equipmentName: string;
+  issueType: string;
+  description: string;
+  daysAgo: number;
+}> = [
+  {
+    equipmentName: "Defibrillator AED 2 (EQ-006)",
+    issueType: "Battery Failure",
+    description: "Self-test reported low battery reserve; battery module replacement scheduled.",
+    daysAgo: 3,
+  },
+  {
+    equipmentName: "Rope Kit Alpine 2 (EQ-011)",
+    issueType: "Wear and Tear",
+    description: "Visible sheath abrasion on main rope segment; set removed from service pending replacement.",
+    daysAgo: 5,
+  },
+  {
+    equipmentName: "Skidoo Snowmobile B (EQ-003)",
+    issueType: "Engine Malfunction",
+    description: "Intermittent engine stall during cold start; diagnostic inspection completed.",
+    daysAgo: 7,
+  },
+  {
+    equipmentName: "VHF Radio Set B (EQ-014)",
+    issueType: "Calibration Drift",
+    description: "Transmit power reading out of tolerance during inspection; recalibration performed.",
+    daysAgo: 9,
+  },
+  {
+    equipmentName: "Thermal Drone 1 (EQ-016)",
+    issueType: "Structural Damage",
+    description: "One propeller arm cover cracked during landing on rocky terrain; replaced.",
+    daysAgo: 11,
+  },
+  {
+    equipmentName: "Stretcher Basket 1 (EQ-009)",
+    issueType: "Wear and Tear",
+    description: "Locking pin wear detected on right-side latch; pin replaced and tested.",
+    daysAgo: 13,
+  },
+  {
+    equipmentName: "Rescue Helicopter Sokół (EQ-001)",
+    issueType: "Hydraulic Leak",
+    description: "Minor hydraulic seepage observed at access panel during post-flight check; seal replaced.",
+    daysAgo: 16,
+  },
+  {
+    equipmentName: "Base Repeater Unit (EQ-015)",
+    issueType: "Software Error",
+    description: "Controller process restart loop after power fluctuation; firmware patch applied.",
+    daysAgo: 18,
+  },
+  {
+    equipmentName: "Avalanche Probe Set (EQ-012)",
+    issueType: "Wear and Tear",
+    description: "Two probe segments bent during training exercise; set reconfigured and marked for replacement parts.",
+    daysAgo: 21,
+  },
+  {
+    equipmentName: "Trauma Kit Bravo (EQ-008)",
+    issueType: "Wear and Tear",
+    description: "Expired consumables found during routine check; restocked and resealed.",
+    daysAgo: 24,
+  },
+  {
+    equipmentName: "ATV Utility Quad (EQ-004)",
+    issueType: "Engine Malfunction",
+    description: "Irregular idle noted after steep ascent use; throttle body cleaned and tested.",
+    daysAgo: 28,
+  },
+  {
+    equipmentName: "Defibrillator AED 1 (EQ-005)",
+    issueType: "Software Error",
+    description: "Startup warning code after self-test; vendor diagnostics completed, no hardware issue found.",
+    daysAgo: 33,
+  },
+  {
+    equipmentName: "K9 Unit Harness Set (EQ-017)",
+    issueType: "Wear and Tear",
+    description: "Harness buckle showing stress marks; buckle assembly replaced.",
+    daysAgo: 39,
+  },
+  {
+    equipmentName: "VHF Radio Set A (EQ-013)",
+    issueType: "Battery Failure",
+    description: "Battery pack capacity degraded below operational target in cold weather; battery replaced.",
+    daysAgo: 45,
+  },
+];
+
+// -----------------------------
+// Hardcoded Mission Reports (sensible, tied to incidents)
+// -----------------------------
+
+const MISSION_REPORT_SEED: Array<{
+  incidentCode: string;
+  reporterEmail: string;
+  difficultyRating?: number;
+  notes: string;
+  hoursAfterIncident: number;
+}> = [
+  {
+    incidentCode: "INC-001",
+    reporterEmail: "jan.kowalski@gopr.pl",
+    difficultyRating: 4,
+    notes: "Search sector assignment completed. K9 and drone coverage prioritized due to low visibility.",
+    hoursAfterIncident: 4,
+  },
+  {
+    incidentCode: "INC-002",
+    reporterEmail: "anna.wisniewska@gopr.pl",
+    difficultyRating: 5,
+    notes: "Patient stabilized on site and prepared for aerial evacuation. Strong coordination between medic and pilot.",
+    hoursAfterIncident: 6,
+  },
+  {
+    incidentCode: "INC-003",
+    reporterEmail: "piotr.nowak@gopr.pl",
+    difficultyRating: 4,
+    notes: "Avalanche area assessed. Standby posture maintained after no confirmed burial.",
+    hoursAfterIncident: 8,
+  },
+  {
+    incidentCode: "INC-004",
+    reporterEmail: "maciej.wojcik@gopr.pl",
+    difficultyRating: 4,
+    notes: "Steep icy section required rope protection for stretcher extraction. Patient transferred safely.",
+    hoursAfterIncident: 12,
+  },
+  {
+    incidentCode: "INC-005",
+    reporterEmail: "karolina.zalewska@gopr.pl",
+    difficultyRating: 3,
+    notes: "Dehydration and fatigue treated on site. Assisted descent completed without complications.",
+    hoursAfterIncident: 10,
+  },
+  {
+    incidentCode: "INC-006",
+    reporterEmail: "katarzyna.lewandowska@gopr.pl",
+    difficultyRating: 3,
+    notes: "Missing skier located near alternate descent route. K9 support shortened search time.",
+    hoursAfterIncident: 14,
+  },
+  {
+    incidentCode: "INC-009",
+    reporterEmail: "dorota.nowicka@gopr.pl",
+    difficultyRating: 4,
+    notes: "Hypothermia protocol initiated in field. Wind exposure significantly impacted patient comfort.",
+    hoursAfterIncident: 9,
+  },
+  {
+    incidentCode: "INC-010",
+    reporterEmail: "pawel.sikora@gopr.pl",
+    difficultyRating: 3,
+    notes: "Search pattern adjusted after terrain bottleneck. Thermal drone helped confirm route traces.",
+    hoursAfterIncident: 11,
+  },
+  {
+    incidentCode: "INC-011",
+    reporterEmail: "sebastian.wrona@gopr.pl",
+    difficultyRating: 3,
+    notes: "Evacuation required short rope support over exposed section. Patient transported to trailhead.",
+    hoursAfterIncident: 13,
+  },
+  {
+    incidentCode: "INC-012",
+    reporterEmail: "ewa.mazur@gopr.pl",
+    difficultyRating: 2,
+    notes: "Mild symptoms resolved after rest and hydration. No transport required.",
+    hoursAfterIncident: 6,
+  },
+  {
+    incidentCode: "INC-014",
+    reporterEmail: "jakub.adamczyk@gopr.pl",
+    difficultyRating: 5,
+    notes: "Avalanche debris assessment and search completed under low visibility. Multi-team coordination effective.",
+    hoursAfterIncident: 18,
+  },
+  {
+    incidentCode: "INC-015",
+    reporterEmail: "jan.kowalski@gopr.pl",
+    difficultyRating: 5,
+    notes: "Severe trauma suspected. Technical extraction and stretcher transport completed in high winds.",
+    hoursAfterIncident: 16,
+  },
+  {
+    incidentCode: "INC-016",
+    reporterEmail: "olga.jablonska@gopr.pl",
+    difficultyRating: 3,
+    notes: "Communication relay and incident logging maintained without interruption during field treatment.",
+    hoursAfterIncident: 7,
+  },
+  {
+    incidentCode: "INC-017",
+    reporterEmail: "katarzyna.lewandowska@gopr.pl",
+    difficultyRating: 2,
+    notes: "Delayed return confirmed as route deviation. Subject located responsive and ambulatory.",
+    hoursAfterIncident: 8,
+  },
+  {
+    incidentCode: "INC-019",
+    reporterEmail: "ewa.mazur@gopr.pl",
+    difficultyRating: 3,
+    notes: "Shoulder dislocation managed in field with immobilization before assisted evacuation.",
+    hoursAfterIncident: 12,
+  },
+  {
+    incidentCode: "INC-020",
+    reporterEmail: "anna.wisniewska@gopr.pl",
+    difficultyRating: 4,
+    notes: "Severe allergic reaction stabilized with emergency medication and monitored during transport.",
+    hoursAfterIncident: 9,
+  },
+];
+
+// -----------------------------
+// Upsert Personnel (ALWAYS ensure sensible set exists)
+// -----------------------------
+
+async function ensurePersonnel(ctx: any) {
+  let created = 0;
+  let updated = 0;
+
+  const idsByEmail = new Map<string, any>();
+
+  for (const p of PERSONNEL_SEED) {
+    const existing = (
+      await ctx.db
+        .query("personnel")
+        .withIndex("by_email", (q: any) => q.eq("email", p.email))
+        .collect()
+    )[0];
 
     const doc = {
-      name,
-      email,
-      phone: `+48 ${randomInt(100, 999)} ${randomInt(100, 999)} ${randomInt(100, 999)}`,
-      role: randomItem(ROLES),
-      certifications: certs,
-      baseStation: randomItem(BASES),
-      isAvailable: Math.random() > 0.25,
-      // aiProfileSummary optional
+      name: p.name,
+      email: p.email,
+      phone: p.phone,
+      role: p.role,
+      certifications: [...p.certifications],
+      baseStation: p.baseStation,
+      isAvailable: p.isAvailable,
+      aiProfileSummary: p.aiProfileSummary,
     };
 
     if (existing) {
       await ctx.db.patch(existing._id, doc);
-      seededPersonnelIds.push(existing._id);
-      updatedPersonnel++;
+      idsByEmail.set(p.email, existing._id);
+      updated++;
     } else {
       const id = await ctx.db.insert("personnel", doc);
-      seededPersonnelIds.push(id);
-      createdPersonnel++;
+      idsByEmail.set(p.email, id);
+      created++;
     }
   }
 
-  // Include any manually-created personnel too, so dispatches can use the full pool
   const allPersonnel = await ctx.db.query("personnel").collect();
 
   return {
-    personnelIds: allPersonnel.length > 0 ? allPersonnel.map((p: any) => p._id) : seededPersonnelIds,
-    createdPersonnel,
-    updatedPersonnel,
+    createdPersonnel: created,
+    updatedPersonnel: updated,
     totalPersonnel: allPersonnel.length,
+    personnelIds: allPersonnel.map((x: any) => x._id),
+    personnelIdByEmail: idsByEmail,
   };
 }
 
 // -----------------------------
-// Upsert Equipment (deterministic names)
+// Upsert Equipment (deterministic by name)
 // -----------------------------
 
-async function ensureEquipment(ctx: any, targetTotal: number) {
-  let createdEquipment = 0;
-  let updatedEquipment = 0;
+async function ensureEquipment(ctx: any) {
+  let created = 0;
+  let updated = 0;
 
-  const existingEquipment = await ctx.db.query("equipment").collect();
-  const equipmentByName = new Map<string, any>(
-  existingEquipment.map((e: any) => [e.name, e] as [string, any])
-);
-  const eqIds: any[] = [];
+  const existing = await ctx.db.query("equipment").collect();
+  const byName = new Map<string, any>(
+    existing.map((e: any) => [String(e.name), e] as [string, any])
+  );
 
-  for (let i = 0; i < targetTotal; i++) {
-    const baseName = EQ_NAMES[i % EQ_NAMES.length];
-    const category = EQ_CATEGORIES[i % EQ_CATEGORIES.length];
-    const equipmentName = `${baseName} (EQ-${String(i + 1).padStart(3, "0")})`;
+  const idsByName = new Map<string, any>();
 
+  for (const e of EQUIPMENT_SEED) {
     const doc = {
-      name: equipmentName,
-      category,
-      status: (["Available", "In Use", "Maintenance"][i % 3] as
-        | "Available"
-        | "In Use"
-        | "Maintenance"
-        | "Retired"),
-      image: undefined,
-      lastInspected: new Date(
-        Date.now() - randomInt(0, 30) * 24 * 60 * 60 * 1000
-      ).toISOString(),
+      name: e.name,
+      category: e.category,
+      status: e.status,
+      image: e.image,
+      lastInspected: daysAgoIso(e.lastInspectedDaysAgo, 8, 30),
     };
 
-    const existing = equipmentByName.get(equipmentName);
-    if (existing) {
-      await ctx.db.patch(existing._id, doc);
-      eqIds.push(existing._id);
-      updatedEquipment++;
+    const found = byName.get(e.name);
+    if (found) {
+      await ctx.db.patch(found._id, doc);
+      idsByName.set(e.name, found._id);
+      updated++;
     } else {
       const id = await ctx.db.insert("equipment", doc);
-      eqIds.push(id);
-      createdEquipment++;
+      idsByName.set(e.name, id);
+      created++;
     }
   }
 
   const allEquipment = await ctx.db.query("equipment").collect();
 
   return {
-    equipmentIds: allEquipment.length > 0 ? allEquipment.map((e: any) => e._id) : eqIds,
-    createdEquipment,
-    updatedEquipment,
+    createdEquipment: created,
+    updatedEquipment: updated,
     totalEquipment: allEquipment.length,
+    equipmentIds: allEquipment.map((x: any) => x._id),
+    equipmentIdByName: idsByName,
   };
 }
 
 // -----------------------------
-// Seed Incidents + Dispatches (recent months, skip if incidents exist)
+// Seed Incidents + Dispatches (hardcoded, if empty)
 // -----------------------------
 
 async function seedIncidentsAndDispatchesIfEmpty(
   ctx: any,
-  personnelIds: any[],
-  equipmentIds: any[]
+  personnelIdByEmail: Map<string, any>,
+  equipmentIdByName: Map<string, any>
 ) {
   let createdIncidents = 0;
   let createdDispatches = 0;
@@ -429,261 +847,217 @@ async function seedIncidentsAndDispatchesIfEmpty(
   const existingIncidents = await ctx.db.query("incidents").collect();
   if (existingIncidents.length > 0) {
     return {
+      skipped: true,
       createdIncidents,
       createdDispatches,
-      skipped: true,
       existingIncidentsCount: existingIncidents.length,
       incidentIds: existingIncidents.map((i: any) => i._id),
+      incidentIdByCode: new Map<string, any>(),
     };
   }
 
-  if (personnelIds.length === 0) {
-    throw new Error("Cannot seed incidents: no personnel found.");
-  }
-  if (equipmentIds.length === 0) {
-    throw new Error("Cannot seed incidents: no equipment found.");
-  }
-
   const incidentIds: any[] = [];
+  const incidentIdByCode = new Map<string, any>();
 
-  // Spread 20 incidents across the last ~90 days, deterministic-ish and sensible.
-  for (let i = 0; i < INCIDENT_TEMPLATES.length; i++) {
-    const t = INCIDENT_TEMPLATES[i];
-
-    // Newest incidents first. First N are active, next 1 standby, rest resolved.
-    const status: "active" | "standby" | "resolved" =
-      i < ACTIVE_INCIDENT_COUNT ? "active" : i === ACTIVE_INCIDENT_COUNT ? "standby" : "resolved";
-
-    // Date pattern: recent for active/standby, older for resolved
-    // 0,1 active = today/yesterday-ish; standby ~2 days ago; then older spaced out
-    const daysBack = i < ACTIVE_INCIDENT_COUNT ? i : i === ACTIVE_INCIDENT_COUNT ? 2 : 4 + i * 4;
-    const reportedDate = daysAgo(daysBack).toISOString();
-
+  for (const inc of INCIDENT_TEMPLATES) {
     const incidentId = await ctx.db.insert("incidents", {
-      type: t.type,
-      status,
-      severityLevel: t.severityLevel,
-      gpsCoordinates: t.gpsCoordinates,
-      weatherConditions: t.weatherConditions,
-      reportedDate,
+      type: inc.type,
+      status: inc.status,
+      severityLevel: inc.severityLevel,
+      gpsCoordinates: inc.gpsCoordinates,
+      weatherConditions: inc.weatherConditions,
+      reportedDate: daysAgoIso(inc.daysBack, 9, 15),
     });
 
     incidentIds.push(incidentId);
+    incidentIdByCode.set(inc.code, incidentId);
     createdIncidents++;
 
-    // Deterministic staffing/equipment assignment (not random)
-    const personnelCount = t.severityLevel >= 4 ? 4 : t.severityLevel === 3 ? 3 : 2;
-    const equipmentCount = t.type === "Avalanche" || t.severityLevel >= 4 ? 2 : 1;
+    // Dispatch personnel
+    for (const email of inc.suggestedPersonnelEmails) {
+      const personnelId = personnelIdByEmail.get(email);
+      if (!personnelId) continue;
 
-    // Rotate through pools so data looks varied but reproducible-ish
-    const pStart = (i * 2) % personnelIds.length;
-    const eStart = i % equipmentIds.length;
-
-    for (let p = 0; p < personnelCount; p++) {
-      const personnelId = personnelIds[(pStart + p) % personnelIds.length];
       await ctx.db.insert("dispatches", {
         incidentId,
         personnelId,
         equipmentId: undefined,
-        dispatchTime: reportedDate,
+        dispatchTime: daysAgoIso(inc.daysBack, 9, 20),
       });
       createdDispatches++;
     }
 
-    for (let e = 0; e < equipmentCount; e++) {
-      const equipmentId = equipmentIds[(eStart + e) % equipmentIds.length];
+    // Dispatch equipment
+    for (const eqName of inc.suggestedEquipmentNames) {
+      const equipmentId = equipmentIdByName.get(eqName);
+      if (!equipmentId) continue;
+
       await ctx.db.insert("dispatches", {
         incidentId,
         personnelId: undefined,
         equipmentId,
-        dispatchTime: reportedDate,
+        dispatchTime: daysAgoIso(inc.daysBack, 9, 25),
       });
       createdDispatches++;
     }
   }
 
   return {
+    skipped: false,
     createdIncidents,
     createdDispatches,
-    skipped: false,
     existingIncidentsCount: 0,
     incidentIds,
+    incidentIdByCode,
   };
 }
 
 // -----------------------------
-// Seed Maintenance Logs (recent months, skip if logs exist)
+// Seed Maintenance Logs (hardcoded, if empty)
 // -----------------------------
 
 async function seedMaintenanceLogsIfEmpty(
   ctx: any,
-  equipmentIds: any[],
-  targetLogs = 20
+  equipmentIdByName: Map<string, any>
 ) {
   let createdMaintenanceLogs = 0;
 
   const existingLogs = await ctx.db.query("maintenance_logs").collect();
   if (existingLogs.length > 0) {
     return {
-      createdMaintenanceLogs,
       skipped: true,
+      createdMaintenanceLogs,
       existingLogsCount: existingLogs.length,
     };
   }
 
-  if (equipmentIds.length === 0) {
-    throw new Error("Cannot seed maintenance logs: no equipment found.");
-  }
+  for (const log of MAINTENANCE_LOG_SEED) {
+    const equipmentId = equipmentIdByName.get(log.equipmentName);
+    if (!equipmentId) continue;
 
-  const now = new Date();
-  const twoMonthsAgo = monthsAgo(2);
-
-  for (let i = 0; i < targetLogs; i++) {
-    const equipmentId = equipmentIds[i % equipmentIds.length];
     await ctx.db.insert("maintenance_logs", {
       equipmentId,
-      issueType: ISSUE_TYPES[i % ISSUE_TYPES.length],
-      description: MAINTENANCE_DESCRIPTIONS[i % MAINTENANCE_DESCRIPTIONS.length],
-      logDate: randomDate(twoMonthsAgo, now),
+      issueType: log.issueType,
+      description: log.description,
+      logDate: daysAgoIso(log.daysAgo, 11, 0),
     });
     createdMaintenanceLogs++;
   }
 
   return {
-    createdMaintenanceLogs,
     skipped: false,
+    createdMaintenanceLogs,
     existingLogsCount: 0,
   };
 }
 
 // -----------------------------
-// Seed Mission Reports (optional, recent, skip if already exist)
+// Seed Mission Reports (hardcoded, if empty)
 // -----------------------------
 
 async function seedMissionReportsIfEmpty(
   ctx: any,
-  incidentIds: any[],
-  personnelIds: any[],
-  targetReports = 25
+  incidentIdByCodeFromSeed: Map<string, any>,
+  personnelIdByEmail: Map<string, any>
 ) {
   let createdMissionReports = 0;
 
   const existingReports = await ctx.db.query("mission_reports").collect();
   if (existingReports.length > 0) {
     return {
-      createdMissionReports,
       skipped: true,
+      createdMissionReports,
       existingReportsCount: existingReports.length,
     };
   }
 
-  if (incidentIds.length === 0 || personnelIds.length === 0) {
+  // If incidents were skipped because they already existed, we don't have code->id mapping.
+  // In that case, skip mission reports too (avoids mismatched assumptions).
+  if (incidentIdByCodeFromSeed.size === 0) {
     return {
-      createdMissionReports,
       skipped: true,
+      createdMissionReports,
       existingReportsCount: existingReports.length,
     };
   }
 
-  // Load incidents so report dates can be after incident date
+  // Load incident dates for proper report timestamps
   const incidents = await ctx.db.query("incidents").collect();
   const incidentById = new Map<string, any>(
-  incidents.map((i: any) => [String(i._id), i] as [string, any])
-);
+    incidents.map((i: any) => [String(i._id), i] as [string, any])
+  );
 
-  const usedPairs = new Set<string>();
-  let safety = 0;
-
-  while (createdMissionReports < targetReports && safety < targetReports * 20) {
-    safety++;
-    const incidentId = randomItem(incidentIds);
-    const reporterId = randomItem(personnelIds);
-
-    const pairKey = `${String(incidentId)}::${String(reporterId)}`;
-    if (usedPairs.has(pairKey)) continue;
+  for (const r of MISSION_REPORT_SEED) {
+    const incidentId = incidentIdByCodeFromSeed.get(r.incidentCode);
+    const reporterId = personnelIdByEmail.get(r.reporterEmail);
+    if (!incidentId || !reporterId) continue;
 
     const incident = incidentById.get(String(incidentId));
     if (!incident) continue;
 
-    usedPairs.add(pairKey);
-
     await ctx.db.insert("mission_reports", {
       incidentId,
       reporterId,
-      difficultyRating: Math.random() < 0.8 ? randomInt(2, 5) : undefined,
-      notes: randomItem(MISSION_REPORT_NOTES),
-      reportDate: addHours(incident.reportedDate, 1, 72), // 1h to 3 days later
+      difficultyRating: r.difficultyRating,
+      notes: r.notes,
+      reportDate: addHours(incident.reportedDate, r.hoursAfterIncident),
     });
 
     createdMissionReports++;
   }
 
   return {
-    createdMissionReports,
     skipped: false,
+    createdMissionReports,
     existingReportsCount: 0,
   };
 }
 
 // -----------------------------
-// Main Seed Mutation
+// Main seed mutation
 // -----------------------------
 
 export const seed = mutation({
   handler: async (ctx) => {
-    // 1) ALWAYS ensure personnel exists
-    const {
-      personnelIds,
-      createdPersonnel,
-      updatedPersonnel,
-      totalPersonnel,
-    } = await ensurePersonnel(ctx, 20);
+    // 1) Always ensure sensible personnel/equipment are present
+    const personnel = await ensurePersonnel(ctx);
+    const equipment = await ensureEquipment(ctx);
 
-    // 2) ALWAYS ensure equipment exists
-    const {
-      equipmentIds,
-      createdEquipment,
-      updatedEquipment,
-      totalEquipment,
-    } = await ensureEquipment(ctx, 30);
-
-    // 3) Incidents + dispatches (recent months)
+    // 2) Seed hardcoded incidents + dispatches (only if empty)
     const incidentsResult = await seedIncidentsAndDispatchesIfEmpty(
       ctx,
-      personnelIds,
-      equipmentIds
+      personnel.personnelIdByEmail,
+      equipment.equipmentIdByName
     );
 
-    // 4) Maintenance logs (recent months)
+    // 3) Seed hardcoded maintenance logs (only if empty)
     const maintenanceResult = await seedMaintenanceLogsIfEmpty(
       ctx,
-      equipmentIds,
-      20
+      equipment.equipmentIdByName
     );
 
-    // 5) Mission reports (optional but nice for demo data)
+    // 4) Seed hardcoded mission reports (only if empty and incidents were seeded now)
     const missionReportsResult = await seedMissionReportsIfEmpty(
       ctx,
-      incidentsResult.incidentIds,
-      personnelIds,
-      25
+      incidentsResult.incidentIdByCode,
+      personnel.personnelIdByEmail
     );
 
     return [
-      "✅ Seed completed",
-      `Personnel: +${createdPersonnel} created, ${updatedPersonnel} updated (total: ${totalPersonnel})`,
-      `Equipment: +${createdEquipment} created, ${updatedEquipment} updated (total: ${totalEquipment})`,
+      "✅ Seed completed (sensible demo data)",
+      `Personnel: +${personnel.createdPersonnel} created, ${personnel.updatedPersonnel} updated (total: ${personnel.totalPersonnel})`,
+      `Equipment: +${equipment.createdEquipment} created, ${equipment.updatedEquipment} updated (total: ${equipment.totalEquipment})`,
       incidentsResult.skipped
         ? `Incidents: skipped (already had ${incidentsResult.existingIncidentsCount})`
-        : `Incidents: +${incidentsResult.createdIncidents} created (last ~4 months)`,
+        : `Incidents: +${incidentsResult.createdIncidents} created (hardcoded 20, ${ACTIVE_INCIDENT_COUNT} active)`,
       incidentsResult.skipped
         ? "Dispatches: skipped (incident seed skipped)"
         : `Dispatches: +${incidentsResult.createdDispatches} created`,
       maintenanceResult.skipped
         ? `Maintenance Logs: skipped (already had ${maintenanceResult.existingLogsCount})`
-        : `Maintenance Logs: +${maintenanceResult.createdMaintenanceLogs} created (last ~2 months)`,
+        : `Maintenance Logs: +${maintenanceResult.createdMaintenanceLogs} created`,
       missionReportsResult.skipped
-        ? `Mission Reports: skipped (already had ${missionReportsResult.existingReportsCount})`
+        ? `Mission Reports: skipped (already had ${missionReportsResult.existingReportsCount} or incidents already existed)`
         : `Mission Reports: +${missionReportsResult.createdMissionReports} created`,
     ].join(" | ");
   },

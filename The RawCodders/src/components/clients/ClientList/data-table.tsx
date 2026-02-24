@@ -26,7 +26,7 @@ import {
 
 import { Button } from "@/components/ui/button"
 
-import { IconAddressBook, IconDotsVertical } from "@tabler/icons-react"
+import { IconAddressBook, IconDotsVertical, IconChevronLeft, IconChevronRight } from "@tabler/icons-react"
 
 import {
   AlertDialog,
@@ -38,6 +38,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+
+import { 
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue, 
+} from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 
 import {
   DropdownMenu,
@@ -52,17 +62,28 @@ import type { TClient } from "./columns"
 import { api } from "../../../../convex/_generated/api"
 import { useMutation } from "convex/react"
 import { useNavigate } from "react-router-dom"
+import { Dispatch, SetStateAction } from "react"
+
+type TPageSettings = {
+  currentPage: number,
+  docCount: number,
+  setCurrentPage: Dispatch<SetStateAction<number>>,
+  setDocCount: Dispatch<SetStateAction<number>>,
+  tableSize: number
+}
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
-  data: TData[]
+  data: TData[],
+  pageSettings: TPageSettings
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  pageSettings
 }: DataTableProps<TData, TValue>) {
-  const { setSelectedClient, setEditClientModalState } = useClientsContext()
+  const { setSelectedClient, setEditClientModalState, setModalObserver } = useClientsContext()
   const deleteClientMutation = useMutation(api.clients.deleteClient)
   const navigate = useNavigate()
   const table = useReactTable({
@@ -109,12 +130,38 @@ export function DataTable<TData, TValue>({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() =>{void deleteClientMutation({ clientId: obj._id })}}>Continue</AlertDialogAction>
+            <AlertDialogAction onClick={() =>{void deleteClientMutation({ clientId: obj._id }).then(() => setModalObserver((prev) => prev + 1))}}>Continue</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     )
 
+  }
+
+  function PaginationControl({className}: {className?: string}) {
+    return (
+      <div className={"flex items-center justify-end space-x-2 py-4 " + className}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => pageSettings.setCurrentPage(pageSettings.currentPage - 1)}
+          disabled={pageSettings.currentPage < 2}
+        >
+          <IconChevronLeft />
+        </Button>
+        <div>
+          {`${pageSettings.currentPage} / ${Math.max(Math.floor(pageSettings.tableSize/pageSettings.docCount) + Number(!!(pageSettings.tableSize%pageSettings.docCount)), 1)}`}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => pageSettings.setCurrentPage(pageSettings.currentPage + 1)}
+          disabled={ pageSettings.currentPage >= Math.floor(pageSettings.tableSize/pageSettings.docCount) + Number(!!(pageSettings.tableSize%pageSettings.docCount)) }
+        >
+          <IconChevronRight />
+        </Button>
+      </div>
+    )
   }
 
 
@@ -127,7 +174,7 @@ export function DataTable<TData, TValue>({
       return (
         <HoverCard openDelay={10} closeDelay={100}>
           <HoverCardTrigger asChild>
-            <Button variant="ghost"><IconAddressBook /></Button>
+            <Button variant="ghost" onClick={(e) => e.stopPropagation()}><IconAddressBook /></Button>
           </HoverCardTrigger>
           <HoverCardContent side="left" className="w-48">
             <div className="text-sm space-y-1">
@@ -142,7 +189,9 @@ export function DataTable<TData, TValue>({
     }
     else if(accessorKey === "action")  {
       return (
-       <ActionMenu obj={client} />
+       <div onClick={(e) => e.stopPropagation()}>
+         <ActionMenu obj={client} />
+       </div>
       )
     }
     
@@ -153,61 +202,87 @@ export function DataTable<TData, TValue>({
 
 
   return (
-    <div className="overflow-hidden text-center rounded-md border">
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => {
-                return (
-                  <TableHead className="text-center" key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                )
-              })}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                data-state={row.getIsSelected() && "selected"}
-                className="cursor-pointer"
-                onClick={() => {
-                  const client = row.original as TClient
-                  void navigate(`/dashboard/clients/${client._id}`)
-                }}
-              >
-                {row.getVisibleCells().map((cell) => {
-                  const accessorKey = cell.column.id
-
+    <>
+      <div className="flex items-center !justify-between gap-2 my-4">
+          <div className="flex flex-row items-center gap-2">
+            <Label className="mb-0">Items per page:</Label>
+            <Select
+              value={String(pageSettings.docCount)}
+              onValueChange={(value) => {pageSettings.setDocCount(Number(value)); pageSettings.setCurrentPage(1)}}
+            >
+              <SelectTrigger className="w-[80px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="15">15</SelectItem>
+                  <SelectItem value="30">30</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="70">70</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <PaginationControl className="flex flex-row justify-end" />
+        </div>
+      <div className="overflow-hidden text-center rounded-md border">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
                   return (
-                    <TableCell key={cell.id}>
-                      {cell.getValue() !== null && (accessorKey === "action" || accessorKey === "address")
-                        ?  RenderObject(cell.getValue() as object, accessorKey, row.original as TClient)
-                        : flexRender(cell.column.columnDef.cell, cell.getContext()) 
-                       }
-                    </TableCell>
+                    <TableHead className="text-center" key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
                   )
                 })}
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
-                No results.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </div>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                  className="cursor-pointer"
+                  onClick={() => {
+                    const client = row.original as TClient
+                    void navigate(`/dashboard/clients/${client._id}`)
+                  }}
+                >
+                  {row.getVisibleCells().map((cell) => {
+                    const accessorKey = cell.column.id
+
+                    return (
+                      <TableCell key={cell.id}>
+                        {cell.getValue() !== null && (accessorKey === "action" || accessorKey === "address")
+                          ?  RenderObject(cell.getValue() as object, accessorKey, row.original as TClient)
+                          : flexRender(cell.column.columnDef.cell, cell.getContext()) 
+                        }
+                      </TableCell>
+                    )
+                  })}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                  No results.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+        <PaginationControl />
+      </div>
+    </>
   )
 }

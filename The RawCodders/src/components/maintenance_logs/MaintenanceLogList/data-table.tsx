@@ -82,9 +82,8 @@ export function DataTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
   })
 
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-
   function ActionMenu({obj}: {obj: TMaintenanceLog}) {
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
     return (
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DropdownMenu>

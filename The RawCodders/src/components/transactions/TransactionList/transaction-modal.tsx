@@ -26,10 +26,10 @@ import { useTransactionsContext } from "./transactions-context";
 import { Id } from "../../../../convex/_generated/dataModel";
 
 export function TransactionModal() {
-  const { selectedTransaction, setSelectedTransaction, editTransactionModalState, setEditTransactionModalState } = useTransactionsContext();
+  const { selectedTransaction, setSelectedTransaction, editTransactionModalState, setEditTransactionModalState, setModalObserver } = useTransactionsContext();
   const clearSelectedTimeoutRef = useRef<number | null>(null);
 
-  const clients = useQuery(api.clients.listClients, { offset: 0, limit: 50 }); 
+  const clients = useQuery(api.clients.listClients, { offset: 0 }); 
 
   const createTransaction = useMutation(api.transactions.insertTransaction);
   const updateTransaction = useMutation(api.transactions.updateTransaction);
@@ -76,6 +76,7 @@ export function TransactionModal() {
           date: new Date().toISOString()
         });
       }
+      setModalObserver((prev) => (prev + 1) % 1000);
       setEditTransactionModalState(false); 
       scheduleClearSelectedTransaction();
     } catch (error) {

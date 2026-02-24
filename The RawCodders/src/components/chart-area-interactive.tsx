@@ -44,7 +44,7 @@ export function TransactionDashboard() {
   const isMobile = useIsMobile()
   const [timeRange, setTimeRange] = React.useState("90d")
 
-  const transactions = useQuery(api.transactions.listTransactions, { offset: 0, limit: 50 })
+  const transactions = useQuery(api.transactions.listTransactions, { offset: 0 })
 
   React.useEffect(() => {
     if (isMobile) {
@@ -57,7 +57,7 @@ export function TransactionDashboard() {
 
     const groupedData: Record<string, { date: string; completed: number; pending: number }> = {}
 
-    transactions.forEach((tx) => {
+    transactions.transactions.forEach((tx) => {
       // tx.date looks like "2024-06-15T14:30"
       // We split by "T" and grab the first part ("2024-06-15") to group by day
       const dateStr = tx.date ? tx.date.split("T")[0] : new Date().toISOString().split("T")[0];

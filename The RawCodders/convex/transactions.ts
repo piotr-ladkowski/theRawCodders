@@ -51,15 +51,18 @@ export const listTransactions = query({
             transactions = transactions.slice(offset);
         }
         
-        return await Promise.all(
+    return {
+        transactions: await Promise.all(
             transactions.map(async (transaction) => {
                 const client = await ctx.db.get(transaction.clientId);
                 return {
                     ...transaction,
-                    clientName: client ? client.name : "Unknown Client",
+                    clientName: client ? client.name : "Unknown Client", 
                 };
             })
-        );
+        ),
+        count: transactions.length
+    };
     },
 });
 

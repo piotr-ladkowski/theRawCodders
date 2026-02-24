@@ -19,7 +19,7 @@ async def run_pipeline() -> dict:
     http_url = settings.convex_url.replace(".cloud", ".site")
     
     async with httpx.AsyncClient() as http_client:
-        response = await http_client.get(f"{http_url}/api/export")
+        response = await http_client.get(f"{http_url}/http/api/export")
         response.raise_for_status()
         data = response.json()
         

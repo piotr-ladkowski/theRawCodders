@@ -60,6 +60,31 @@ const WEATHER = [
   "Foggy, 0C",
 ] as const;
 
+const ISSUE_TYPES = [
+  "Battery Failure",
+  "Engine Malfunction",
+  "Structural Damage",
+  "Calibration Drift",
+  "Wear and Tear",
+  "Software Error",
+  "Hydraulic Leak",
+] as const;
+
+const MAINTENANCE_DESCRIPTIONS = [
+  "Battery pack depleted below safe threshold after extended cold-weather operation.",
+  "Engine stalling intermittently during high-altitude runs; needs carburetor inspection.",
+  "Frame cracked after impact during last rescue mission; requires welding.",
+  "GPS module showing 15m drift; recalibration and firmware update needed.",
+  "Rope abrasion detected near carabiner attachment point; replacement scheduled.",
+  "On-board diagnostics software crash on startup; reinstallation required.",
+  "Hydraulic fluid leak found at main lift cylinder seal.",
+  "Radio antenna connector corroded; signal intermittent in bad weather.",
+  "Stretcher locking mechanism jammed; pivot bolt replacement needed.",
+  "Drone propeller blade chipped after landing in rocky terrain.",
+  "Defibrillator self-test failed; electrode pads expired and need replacement.",
+  "Snowmobile track tension out of spec; adjustment and track inspection required.",
+] as const;
+
 function randomInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -93,6 +118,7 @@ export const seed = mutation({
     let updatedEquipment = 0;
     let createdIncidents = 0;
     let createdDispatches = 0;
+    let createdMaintenanceLogs = 0;
 
     // -----------------------------
     // 1) Seed / Upsert Personnel (idempotent by email)
@@ -237,6 +263,28 @@ export const seed = mutation({
       }
     }
 
+    // -----------------------------
+    // 4) Seed Maintenance Logs
+    // Idempotency: skip if logs already exist
+    // -----------------------------
+    const existingLogs = await ctx.db.query("maintenance_logs").collect();
+    if (existingLogs.length === 0) {
+      const now = new Date();
+      const threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(now.getMonth() - 3);
+
+      for (let i = 0; i < 20; i++) {
+        const equipmentId = eqIds[i % eqIds.length];
+        await ctx.db.insert("maintenance_logs", {
+          equipmentId,
+          issueType: ISSUE_TYPES[i % ISSUE_TYPES.length],
+          description: MAINTENANCE_DESCRIPTIONS[i % MAINTENANCE_DESCRIPTIONS.length],
+          logDate: randomDate(threeMonthsAgo, now),
+        });
+        createdMaintenanceLogs++;
+      }
+    }
+
     return [
       "✅ Seed completed",
       `Personnel: +${createdPersonnel} created, ${updatedPersonnel} updated`,
@@ -247,6 +295,9 @@ export const seed = mutation({
       existingIncidents.length === 0
         ? `Dispatches: +${createdDispatches} created`
         : "Dispatches: skipped (incident seed skipped)",
+      existingLogs.length === 0
+        ? `Maintenance Logs: +${createdMaintenanceLogs} created`
+        : `Maintenance Logs: skipped (already had ${existingLogs.length})`,
     ].join(" | ");
   },
 });

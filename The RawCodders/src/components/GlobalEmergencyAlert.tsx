@@ -47,42 +47,68 @@ export function GlobalEmergencyAlert() {
   const availableEquipment = equipment?.filter((eq: any) => eq.status === "Available") ?? [];
 
   const fetchRecommendation = useCallback(async () => {
-    if (!activeAlert || (availablePersonnel.length === 0 && availableEquipment.length === 0)) return;
+    console.log("[QuickDispatch] fetchRecommendation called", {
+      hasActiveAlert: !!activeAlert,
+      activeAlertId: activeAlert?._id,
+      activeAlertType: activeAlert?.type,
+      availablePersonnelCount: availablePersonnel.length,
+      availableEquipmentCount: availableEquipment.length,
+    });
+
+    if (!activeAlert || (availablePersonnel.length === 0 && availableEquipment.length === 0)) {
+      console.warn("[QuickDispatch] Skipping fetch: no alert or no available resources");
+      return;
+    }
 
     setRecommendationLoading(true);
     setRecommendationError(null);
     setRecommendation(null);
 
+    const requestBody = {
+      incident_type: activeAlert.type,
+      severity_level: activeAlert.severityLevel,
+      gps_coordinates: {
+        latitude: activeAlert.gpsCoordinates.latitude,
+        longitude: activeAlert.gpsCoordinates.longitude,
+      },
+      weather_conditions: activeAlert.weatherConditions ?? null,
+      available_personnel: availablePersonnel.map((p: any) => ({
+        name: p.name,
+        role: p.role,
+        certifications: p.certifications ?? [],
+      })),
+      available_equipment: availableEquipment.map((eq: any) => ({
+        name: eq.name,
+        category: eq.category ?? "",
+      })),
+    };
+
+    console.log("[QuickDispatch] POST /dispatch-recommendation", {
+      url: `${AI_SERVICE_URL}/dispatch-recommendation`,
+      body: requestBody,
+    });
+
     try {
       const res = await fetch(`${AI_SERVICE_URL}/dispatch-recommendation`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          incident_type: activeAlert.type,
-          severity_level: activeAlert.severityLevel,
-          gps_coordinates: {
-            latitude: activeAlert.gpsCoordinates.latitude,
-            longitude: activeAlert.gpsCoordinates.longitude,
-          },
-          weather_conditions: activeAlert.weatherConditions ?? null,
-          available_personnel: availablePersonnel.map((p: any) => ({
-            name: p.name,
-            role: p.role,
-            certifications: p.certifications ?? [],
-          })),
-          available_equipment: availableEquipment.map((eq: any) => ({
-            name: eq.name,
-            category: eq.category ?? "",
-          })),
-        }),
+        body: JSON.stringify(requestBody),
       });
 
-      if (!res.ok) throw new Error("AI service unavailable");
+      console.log("[QuickDispatch] Response status:", res.status, res.statusText);
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("[QuickDispatch] Error response body:", errorText);
+        throw new Error(`AI service returned ${res.status}: ${errorText}`);
+      }
+
       const data: DispatchRecommendation = await res.json();
+      console.log("[QuickDispatch] Recommendation received:", data);
       setRecommendation(data);
     } catch (err) {
+      console.error("[QuickDispatch] Dispatch recommendation failed:", err);
       setRecommendationError("Could not load AI recommendation.");
-      console.error("Dispatch recommendation failed:", err);
     } finally {
       setRecommendationLoading(false);
     }

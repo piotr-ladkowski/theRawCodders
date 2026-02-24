@@ -18,11 +18,34 @@ export const listReturns = query({
 
         const offset = args.offset ?? 0;
         const limit = args.limit ?? 50;
-        if (args.limit !== undefined) {
-            return returns.slice(offset, offset + args.limit);
-        }
         
-        return returns.slice(offset);
+        let slicedReturns = returns;
+        if (args.limit !== undefined) {
+            slicedReturns = returns.slice(offset, offset + args.limit);
+        } else {
+            slicedReturns = returns.slice(offset);
+        }
+
+        const enrichedReturns = await Promise.all(
+            slicedReturns.map(async (ret) => {
+                const order = await ctx.db.get(ret.orderId);
+                let productName = "Unknown Product";
+                
+                if (order) {
+                    const product = await ctx.db.get(order.productId);
+                    if (product) {
+                        productName = product.name;
+                    }
+                }
+                
+                return {
+                    ...ret,
+                    productName,
+                };
+            })
+        );
+        
+        return enrichedReturns;
     },
 });
 

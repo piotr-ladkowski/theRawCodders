@@ -6,7 +6,15 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import "./index.css";
 import App from "./App.tsx";
 
-const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
+const convexUrl = "http://majkrafty.ddns.net:3210"//import.meta.env.VITE_CONVEX_URL || "http://127.0.0.1:3210";
+
+if (!convexUrl.startsWith("http://") && !convexUrl.startsWith("https://")) {
+  throw new Error(
+    `VITE_CONVEX_URL must be an absolute URL (e.g., http://localhost:3210). Got: ${convexUrl}`
+  );
+}
+
+const convex = new ConvexReactClient(convexUrl);
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

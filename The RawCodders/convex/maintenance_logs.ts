@@ -35,3 +35,17 @@ export const insertMaintenanceLog = mutation({
         return await ctx.db.insert("maintenance_logs", args);
     },
 });
+
+// add delete maintenance log mutation
+export const deleteMaintenanceLog = mutation({
+    args: { logId: v.id("maintenance_logs") },
+    handler: async (ctx, args) => {
+        const log = await ctx.db.get(args.logId);
+        if (!log) throw new Error("Maintenance Log Not Found");
+
+        // Optionally, you could also update the equipment status back to Available here
+        // await ctx.db.patch(log.equipmentId, { status: "Available" });
+
+        await ctx.db.delete(args.logId);
+    },
+});

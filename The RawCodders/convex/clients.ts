@@ -151,6 +151,18 @@ export const getClientDetailStats = query({
             .map(([date, amount]) => ({ date, amount }))
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-        return { totalSpending, totalOrders, totalReturns, returnRate, spendingOverTime };
+        // Average rating from opinions
+        const opinions = await ctx.db
+            .query("opinions")
+            .withIndex("by_clientId", (q) => q.eq("clientId", args.clientId))
+            .collect();
+
+        const averageRating =
+            opinions.length > 0
+                ? opinions.reduce((sum, o) => sum + o.rating, 0) / opinions.length
+                : null;
+        const totalRatings = opinions.length;
+
+        return { totalSpending, totalOrders, totalReturns, returnRate, spendingOverTime, averageRating, totalRatings };
     },
 });

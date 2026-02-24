@@ -57,11 +57,11 @@ async def run_pipeline() -> dict:
 
     # Run all analyses
     raw_metrics = {
-        "temporal": analyze_temporal(data),
-        "demographics": analyze_demographics(data),
-        "products": analyze_products(data),
-        "transactions": analyze_transactions(data),
-        "returns": analyze_returns(data),
+        "temporal": analyze_temporal(data),  # list of transaction rows
+        "demographics": analyze_demographics(data),                  # full dict of tables
+        "products": analyze_products(data),                          # likely full dict
+        "transactions": analyze_transactions(data),                  # likely full dict
+        "returns": analyze_returns(data),                            # likely full dict
     }
 
     raw_metrics = _make_serializable(raw_metrics)
@@ -92,6 +92,35 @@ async def run_pipeline() -> dict:
         "marketing_actions": sections.get("marketing_actions", []),
         "raw_metrics": raw_metrics,
     }
+
+
+CLIENT_SUMMARY_PROMPT = """You are a senior business analyst for an e-commerce platform.
+You will receive JSON data containing a specific client's statistics including their
+spending, order count, return rate, and average review rating.
+
+Produce exactly 3 sentences summarizing this client's profile:
+1. First sentence about their spending behavior.
+2. Second sentence about their review/rating activity.
+3. Third sentence about their cancellation/return rate.
+
+Be concise, data-driven, and professional. Reference the specific numbers provided."""
+
+
+async def generate_client_summary(client_data: dict) -> str:
+    """Generate a 3-sentence AI summary for a single client."""
+    openai_client = AsyncOpenAI(api_key=settings.openai_api_key)
+    response = await openai_client.chat.completions.create(
+        model="gpt-4o",
+        temperature=0.3,
+        messages=[
+            {"role": "system", "content": CLIENT_SUMMARY_PROMPT},
+            {
+                "role": "user",
+                "content": f"Here is the client data:\n\n```json\n{json.dumps(client_data, indent=2)}\n```",
+            },
+        ],
+    )
+    return response.choices[0].message.content.strip()
 
 
 def _parse_narrative(text: str) -> dict:

@@ -29,7 +29,7 @@ export function TransactionModal() {
   const { selectedTransaction, setSelectedTransaction, editTransactionModalState, setEditTransactionModalState, setModalObserver } = useTransactionsContext();
   const clearSelectedTimeoutRef = useRef<number | null>(null);
 
-  const clients = useQuery(api.clients.listClients, { offset: 0 }); 
+  const clients = useQuery(api.clients.listClients, { offset: 0, limit: 200}); 
 
   const createTransaction = useMutation(api.transactions.insertTransaction);
   const updateTransaction = useMutation(api.transactions.updateTransaction);

@@ -1,10 +1,11 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useQuery } from "convex/react"
 import { api } from "../../../convex/_generated/api"
 import { Id } from "../../../convex/_generated/dataModel"
-import { IconArrowLeft, IconCash, IconTruckReturn } from "@tabler/icons-react"
+import { IconArrowLeft, IconCash, IconStar, IconTruckReturn, IconSparkles } from "@tabler/icons-react"
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 
 import { Button } from "@/components/ui/button"
@@ -24,8 +25,10 @@ import {
 } from "@/components/ui/chart"
 import { Spinner } from "@/components/ui/spinner"
 
+const AI_SERVICE_URL = import.meta.env.VITE_AI_SERVICE_URL || "http://localhost:8000"
+
 const chartConfig = {
-  amount: { label: "Spending ($)", color: "hsl(var(--chart-1))" },
+  amount: { label: "Spending ($)", color: "oklch(50.69% .1387 329.4)" },
 } satisfies ChartConfig
 
 export default function ClientDetail() {
@@ -40,6 +43,44 @@ export default function ClientDetail() {
     api.clients.getClientDetailStats,
     clientId ? { clientId: clientId as Id<"clients"> } : "skip"
   )
+
+  const [summary, setSummary] = useState<string | null>(null)
+  const [summaryLoading, setSummaryLoading] = useState(false)
+  const [summaryError, setSummaryError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!client || !stats) return
+
+    const fetchSummary = async () => {
+      setSummaryLoading(true)
+      setSummaryError(null)
+      try {
+        const response = await fetch(`${AI_SERVICE_URL}/client-summary`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: client.name,
+            totalSpending: stats.totalSpending,
+            totalOrders: stats.totalOrders,
+            totalReturns: stats.totalReturns,
+            returnRate: stats.returnRate,
+            averageRating: stats.averageRating,
+            totalRatings: stats.totalRatings,
+          }),
+        })
+        if (!response.ok) throw new Error("Failed to generate summary")
+        const data = await response.json()
+        setSummary(data.summary)
+      } catch (err) {
+        console.error("Failed to fetch client summary:", err)
+        setSummaryError("Unable to generate AI summary")
+      } finally {
+        setSummaryLoading(false)
+      }
+    }
+
+    fetchSummary()
+  }, [client, stats])
 
   if (client === undefined || stats === undefined) {
     return (
@@ -78,7 +119,7 @@ export default function ClientDetail() {
           </div>
 
           {/* Stat Cards */}
-          <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-3">
             <Card className="@container/card">
               <CardHeader>
                 <CardDescription>Total Spendings</CardDescription>
@@ -114,6 +155,29 @@ export default function ClientDetail() {
                 </div>
                 <div className="text-muted-foreground">
                   Percentage of orders returned
+                </div>
+              </CardFooter>
+            </Card>
+
+            <Card className="@container/card">
+              <CardHeader>
+                <CardDescription>Average Rating</CardDescription>
+                <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+                  {stats.averageRating !== null
+                    ? stats.averageRating.toFixed(1)
+                    : "N/A"}
+                  {stats.averageRating !== null && (
+                    <span className="text-base text-muted-foreground"> / 5</span>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardFooter className="flex-col items-start gap-1.5 text-sm">
+                <div className="line-clamp-1 flex gap-2 font-medium">
+                  <IconStar className="size-4 text-yellow-500" />
+                  {stats.totalRatings} rating{stats.totalRatings !== 1 ? "s" : ""} given
+                </div>
+                <div className="text-muted-foreground">
+                  Average across all product reviews
                 </div>
               </CardFooter>
             </Card>
@@ -180,6 +244,33 @@ export default function ClientDetail() {
                     </AreaChart>
                   </ChartContainer>
                 )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* AI Client Summary */}
+          <div className="px-4 lg:px-6">
+            <Card className="@container/card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <IconSparkles className="size-5 text-purple-500" />
+                  AI Client Summary
+                </CardTitle>
+                <CardDescription>
+                  AI-generated overview of this client's activity
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {summaryLoading ? (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Spinner className="size-4" />
+                    Generating summary…
+                  </div>
+                ) : summaryError ? (
+                  <p className="text-sm text-muted-foreground">{summaryError}</p>
+                ) : summary ? (
+                  <p className="text-sm leading-relaxed">{summary}</p>
+                ) : null}
               </CardContent>
             </Card>
           </div>

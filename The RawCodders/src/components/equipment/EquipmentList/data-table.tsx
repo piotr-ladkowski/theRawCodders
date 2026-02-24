@@ -1,4 +1,4 @@
-"use Product"
+"use client"
 
 import {
   ColumnDef,
@@ -6,7 +6,6 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-
 import {
   Table,
   TableBody,
@@ -15,13 +14,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card"
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,9 +24,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-
 import { Button } from "@/components/ui/button"
-
+import { Badge } from "@/components/ui/badge"
 import { 
   Select,
   SelectContent,
@@ -43,12 +34,8 @@ import {
   SelectTrigger,
   SelectValue, 
 } from "@/components/ui/select"
-
 import { Label } from "@/components/ui/label"
-
-import { IconAddressBook, IconDotsVertical } from "@tabler/icons-react"
-
-import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react"
+import { IconDotsVertical, IconChevronLeft, IconChevronRight } from "@tabler/icons-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,15 +43,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useProductsContext } from "./products-context"
-import type { TProduct } from "./columns"
-
+import { useEquipmentContext } from "./equipment-context"
+import type { TEquipment } from "./columns"
 import { api } from "../../../../convex/_generated/api"
 import { useMutation } from "convex/react"
 import { useState, Dispatch, SetStateAction } from "react"
-
-
-
 
 type TPageSettings = {
   currentPage: number,
@@ -85,8 +68,8 @@ export function DataTable<TData, TValue>({
   data,
   pageSettings
 }: DataTableProps<TData, TValue>) {
-  const { setSelectedProduct, setEditProductModalState } = useProductsContext()
-  const deleteProductMutation = useMutation(api.products.deleteProduct)
+  const { setSelectedEquipment, setEditEquipmentModalState } = useEquipmentContext()
+  const deleteEquipmentMutation = useMutation(api.equipment.deleteEquipment)
   const table = useReactTable({
     data,
     columns,
@@ -95,7 +78,7 @@ export function DataTable<TData, TValue>({
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  function ActionMenu({obj}: {obj: TProduct}) {
+  function ActionMenu({obj}: {obj: TEquipment}) {
     return (
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DropdownMenu>
@@ -106,7 +89,7 @@ export function DataTable<TData, TValue>({
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => { setSelectedProduct(obj); setEditProductModalState(true);}}>
+              <DropdownMenuItem onClick={() => { setSelectedEquipment(obj); setEditEquipmentModalState(true);}}>
                   Edit
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -125,17 +108,16 @@ export function DataTable<TData, TValue>({
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this product from our servers.
+              This action cannot be undone. This will permanently remove this piece of equipment from the inventory.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() =>{void deleteProductMutation({ productId: obj._id })}}>Continue</AlertDialogAction>
+            <AlertDialogAction onClick={() =>{void deleteEquipmentMutation({ equipmentId: obj._id })}}>Continue</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     )
-
   }
 
   function PaginationControl({className}: {className?: string}) {
@@ -164,39 +146,24 @@ export function DataTable<TData, TValue>({
     )
   }
 
-
-  function RenderObject(object: object, accessorKey: string, Product: TProduct) {
-    const obj = object as Record<string, any>;
-
-    // Check if this is an address object
-    if (accessorKey === "address") {
-      return (
-        <HoverCard openDelay={10} closeDelay={100}>
-          <HoverCardTrigger asChild>
-            <Button variant="ghost"><IconAddressBook /></Button>
-          </HoverCardTrigger>
-          <HoverCardContent side="left" className="w-48">
-            <div className="text-sm space-y-1">
-              <div>{obj.line1}</div>
-              <div>{obj.line2}</div>
-              <div>{obj.postCode}, {obj.city}</div>
-              <div>{obj.country}</div>
-            </div>
-          </HoverCardContent>
-        </HoverCard>
-      );
+  function RenderObject(value: any, accessorKey: string, equipment: TEquipment) {
+    if(accessorKey === "action")  {
+      return <ActionMenu obj={equipment} />
     }
-    else if(accessorKey === "action")  {
-      return (
-       <ActionMenu obj={Product} />
-      )
+    if(accessorKey === "status") {
+      const statusValue = value as string;
+      let variant: "default" | "destructive" | "outline" | "secondary" = "default";
+      if (statusValue === "In Use") variant = "secondary";
+      if (statusValue === "Maintenance") variant = "destructive";
+      if (statusValue === "Retired") variant = "outline";
+      
+      return <Badge variant={variant}>{statusValue}</Badge>;
     }
-    
+    if(accessorKey === "lastInspected") {
+      return <span>{String(value).split("T")[0]}</span>;
+    }
+    return null;
   }
-
-
-
-
 
   return (
     <>
@@ -251,12 +218,13 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => {
-                    const accessorKey = cell.column.id
+                    const accessorKey = cell.column.id;
+                    const value = cell.getValue();
 
                     return (
                       <TableCell key={cell.id}>
-                        {cell.getValue() !== null && (accessorKey === "action" )
-                          ?  RenderObject(cell.getValue() as object, accessorKey, row.original as TProduct)
+                        {value !== null && (accessorKey === "action" || accessorKey === "status" || accessorKey === "lastInspected")
+                          ? RenderObject(value, accessorKey, row.original as TEquipment)
                           : flexRender(cell.column.columnDef.cell, cell.getContext()) 
                         }
                       </TableCell>

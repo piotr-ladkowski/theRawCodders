@@ -1,4 +1,4 @@
-"use Transaction"
+"use client"
 
 import {
   ColumnDef,
@@ -6,7 +6,6 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-
 import {
   Table,
   TableBody,
@@ -15,17 +14,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card"
-
 import { Button } from "@/components/ui/button"
-
-import { IconAddressBook, IconDotsVertical, IconChevronRight, IconChevronLeft } from "@tabler/icons-react"
-
+import { Badge } from "@/components/ui/badge"
+import { IconDotsVertical, IconChevronRight, IconChevronLeft } from "@tabler/icons-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,7 +27,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-
 import { 
   Select,
   SelectContent,
@@ -46,7 +36,6 @@ import {
   SelectValue, 
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,9 +43,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useTransactionsContext } from "./transactions-context"
-import type { TTransaction } from "./columns"
-
+import { useIncidentsContext } from "./incidents-context"
+import type { TIncident } from "./columns"
 import { api } from "../../../../convex/_generated/api"
 import { useMutation } from "convex/react"
 import { useState, Dispatch, SetStateAction } from "react"
@@ -69,7 +57,6 @@ type TPageSettings = {
   tableSize: number
 }
 
-
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[],
@@ -81,8 +68,8 @@ export function DataTable<TData, TValue>({
   data,
   pageSettings
 }: DataTableProps<TData, TValue>) {
-  const { setSelectedTransaction, setEditTransactionModalState } = useTransactionsContext()
-  const deleteTransactionMutation = useMutation(api.transactions.deleteTransaction)
+  const { setSelectedIncident, setEditIncidentModalState } = useIncidentsContext()
+  const deleteIncidentMutation = useMutation(api.incidents.deleteIncident)
   const table = useReactTable({
     data,
     columns,
@@ -91,7 +78,7 @@ export function DataTable<TData, TValue>({
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  function ActionMenu({obj}: {obj: TTransaction}) {
+  function ActionMenu({obj}: {obj: TIncident}) {
     return (
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DropdownMenu>
@@ -102,8 +89,8 @@ export function DataTable<TData, TValue>({
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => { setSelectedTransaction(obj); setEditTransactionModalState(true);}}>
-                  Edit
+              <DropdownMenuItem onClick={() => { setSelectedIncident(obj); setEditIncidentModalState(true);}}>
+                  Update Status
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="hover:!bg-red-400"
@@ -112,7 +99,7 @@ export function DataTable<TData, TValue>({
                   setIsDeleteDialogOpen(true)
                 }}
               >
-                Delete
+                Delete Log
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
@@ -122,17 +109,16 @@ export function DataTable<TData, TValue>({
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this transaction from our servers.
+              This action cannot be undone. This will permanently delete this incident record from the database.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() =>{void deleteTransactionMutation({ transactionId: obj._id })}}>Continue</AlertDialogAction>
+            <AlertDialogAction onClick={() =>{void deleteIncidentMutation({ incidentId: obj._id })}}>Continue</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     )
-
   }
 
   function PaginationControl({className}: {className?: string}) {
@@ -161,39 +147,25 @@ export function DataTable<TData, TValue>({
     )
   }
 
-
-  function RenderObject(object: object, accessorKey: string, Transaction: TTransaction) {
-    const obj = object as Record<string, any>;
-
-    
-    // Check if this is an address object
-    if (accessorKey === "address") {
-      return (
-        <HoverCard openDelay={10} closeDelay={100}>
-          <HoverCardTrigger asChild>
-            <Button variant="ghost"><IconAddressBook /></Button>
-          </HoverCardTrigger>
-          <HoverCardContent side="left" className="w-48">
-            <div className="text-sm space-y-1">
-              <div>{obj.line1}</div>
-              <div>{obj.line2}</div>
-              <div>{obj.postCode}, {obj.city}</div>
-              <div>{obj.country}</div>
-            </div>
-          </HoverCardContent>
-        </HoverCard>
-      );
+  function RenderObject(value: any, accessorKey: string, incident: TIncident) {
+    if(accessorKey === "action")  {
+      return <ActionMenu obj={incident} />
     }
-    else if(accessorKey === "action")  {
+    if (accessorKey === "status") {
+      const st = value as string;
       return (
-       <ActionMenu obj={Transaction} />
+        <Badge variant={st === "active" ? "destructive" : st === "standby" ? "secondary" : "default"}>
+          {st.toUpperCase()}
+        </Badge>
       )
     }
-    
+    if (accessorKey === "severityLevel") {
+      const num = value as number;
+      // High severity stands out
+      return <span className={`font-bold ${num >= 4 ? "text-red-500" : ""}`}>{num}</span>;
+    }
+    return null;
   }
-
-
-
 
   return (
     <>
@@ -249,11 +221,10 @@ export function DataTable<TData, TValue>({
                 >
                   {row.getVisibleCells().map((cell) => {
                     const accessorKey = cell.column.id
-
                     return (
                       <TableCell key={cell.id}>
-                        {cell.getValue() !== null && (accessorKey === "action" || accessorKey === "address")
-                          ?  RenderObject(cell.getValue() as object, accessorKey, row.original as TTransaction)
+                        {cell.getValue() !== null && (accessorKey === "action" || accessorKey === "status" || accessorKey === "severityLevel")
+                          ?  RenderObject(cell.getValue(), accessorKey, row.original as TIncident)
                           : flexRender(cell.column.columnDef.cell, cell.getContext()) 
                         }
                       </TableCell>

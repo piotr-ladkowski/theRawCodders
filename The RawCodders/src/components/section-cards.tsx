@@ -36,8 +36,15 @@ export function SectionCards() {
     return { totalRevenue: completed, pendingRevenue: pending }
   }, [transactions])
 
-  const totalClients = clients ? clients.length : 0
-  const totalReturns = returns ? returns.length : 0
+  const getCount = (val: any): number => {
+    if (!val) return 0
+    if (Array.isArray(val)) return val.length
+    if (typeof val === "object") return (val as any).data?.length ?? (val as any).total ?? 0
+    return 0
+  }
+
+  const totalClients = getCount(clients)
+  const totalReturns = getCount(returns)
 
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">

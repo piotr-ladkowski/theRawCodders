@@ -1,6 +1,5 @@
-import { TransactionDashboard } from "@/components/chart-area-interactive"
-import { ReturnsDashboard } from "@/components/chart-returns"
-//import { DataTable } from "@/components/data-table"
+import { IncidentDashboard } from "@/components/chart-area-interactive"
+import { MaintenanceDashboard } from "@/components/chart-returns"
 import { SectionCards } from "@/components/section-cards"
 
 
@@ -11,10 +10,10 @@ const DashboardExample = () => {
                     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
                     <SectionCards />
                     <div className="px-4 lg:px-6">
-                        <TransactionDashboard />
+                        <IncidentDashboard />
                     </div>
                     <div className="px-4 lg:px-6">
-                        <ReturnsDashboard />
+                        <MaintenanceDashboard />
                     </div>                    
                     </div>
                 </div>

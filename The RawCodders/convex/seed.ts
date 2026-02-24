@@ -368,7 +368,9 @@ async function ensureEquipment(ctx: any, targetTotal: number) {
   let updatedEquipment = 0;
 
   const existingEquipment = await ctx.db.query("equipment").collect();
-  const equipmentByName = new Map(existingEquipment.map((e: any) => [e.name, e]));
+  const equipmentByName = new Map<string, any>(
+  existingEquipment.map((e: any) => [e.name, e] as [string, any])
+);
   const eqIds: any[] = [];
 
   for (let i = 0; i < targetTotal; i++) {
@@ -585,7 +587,9 @@ async function seedMissionReportsIfEmpty(
 
   // Load incidents so report dates can be after incident date
   const incidents = await ctx.db.query("incidents").collect();
-  const incidentById = new Map(incidents.map((i: any) => [String(i._id), i]));
+  const incidentById = new Map<string, any>(
+  incidents.map((i: any) => [String(i._id), i] as [string, any])
+);
 
   const usedPairs = new Set<string>();
   let safety = 0;

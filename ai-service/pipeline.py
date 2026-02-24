@@ -56,12 +56,13 @@ async def run_pipeline() -> dict:
     data = await fetch_all()
 
     # Run all analyses
+    # Run all analyses
     raw_metrics = {
-        "temporal": analyze_temporal(data.get("transactions", [])),
-        "demographics": analyze_demographics(data),
-        "products": analyze_products(data),
-        "transactions": analyze_transactions(data),
-        "returns": analyze_returns(data),
+        "temporal": analyze_temporal(data.get("transactions", [])),  # list of transaction rows
+        "demographics": analyze_demographics(data),                  # full dict of tables
+        "products": analyze_products(data),                          # likely full dict
+        "transactions": analyze_transactions(data),                  # likely full dict
+        "returns": analyze_returns(data),                            # likely full dict
     }
 
     raw_metrics = _make_serializable(raw_metrics)

@@ -1,4 +1,4 @@
-"use Return"
+"use client"
 
 import {
   ColumnDef,
@@ -6,7 +6,6 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-
 import {
   Table,
   TableBody,
@@ -15,18 +14,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card"
-
 import { Button } from "@/components/ui/button"
-
-import { IconAddressBook, IconDotsVertical, IconChevronRight, IconChevronLeft } from "@tabler/icons-react"
-
-
+import { Badge } from "@/components/ui/badge"
+import { IconDotsVertical, IconChevronRight, IconChevronLeft } from "@tabler/icons-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,13 +24,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useReturnsContext } from "./returns-context"
-import type { TReturn } from "./columns"
-
+import { useMaintenanceContext } from "./maintaince-context"
+import type { TMaintenanceLog } from "./columns"
 import { api } from "../../../../convex/_generated/api"
 import { useMutation } from "convex/react"
 import { useState, Dispatch, SetStateAction } from "react"
-
 import { 
   Select,
   SelectContent,
@@ -50,7 +38,6 @@ import {
   SelectValue, 
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -81,8 +68,9 @@ export function DataTable<TData, TValue>({
   data,
   pageSettings
 }: DataTableProps<TData, TValue>) {
-  const { setSelectedReturn, setEditReturnModalState } = useReturnsContext()
-  const deleteReturnMutation = useMutation(api.returns.deleteReturn)
+  const { setSelectedLog, setEditLogModalState } = useMaintenanceContext()
+  // Remember to add deleteMaintenanceLog to convex/maintenance_logs.ts if you get an error here!
+  const deleteLogMutation = useMutation(api.maintenance_logs?.deleteMaintenanceLog as any)
   const table = useReactTable({
     data,
     columns,
@@ -91,7 +79,7 @@ export function DataTable<TData, TValue>({
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
-  function ActionMenu({obj}: {obj: TReturn}) {
+  function ActionMenu({obj}: {obj: TMaintenanceLog}) {
     return (
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DropdownMenu>
@@ -102,8 +90,8 @@ export function DataTable<TData, TValue>({
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => { setSelectedReturn(obj); setEditReturnModalState(true);}}>
-                  Edit
+              <DropdownMenuItem onClick={() => { setSelectedLog(obj); setEditLogModalState(true);}}>
+                  Edit Log
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="hover:!bg-red-400"
@@ -112,7 +100,7 @@ export function DataTable<TData, TValue>({
                   setIsDeleteDialogOpen(true)
                 }}
               >
-                Delete
+                Delete Log
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
@@ -122,17 +110,16 @@ export function DataTable<TData, TValue>({
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this return from our servers.
+              This action cannot be undone. This will permanently delete this maintenance log.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() =>{void deleteReturnMutation({ returnId: obj._id })}}>Continue</AlertDialogAction>
+            <AlertDialogAction onClick={() =>{void deleteLogMutation({ logId: obj._id })}}>Continue</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     )
-
   }
 
   function PaginationControl({className}: {className?: string}) {
@@ -161,35 +148,15 @@ export function DataTable<TData, TValue>({
     )
   }
 
-
-  function RenderObject(object: object, accessorKey: string, Return: TReturn) {
-    const obj = object as Record<string, any>;
-
-    
-    // Check if this is an address object
-    if (accessorKey === "address") {
-      return (
-        <HoverCard openDelay={10} closeDelay={100}>
-          <HoverCardTrigger asChild>
-            <Button variant="ghost"><IconAddressBook /></Button>
-          </HoverCardTrigger>
-          <HoverCardContent side="left" className="w-48">
-            <div className="text-sm space-y-1">
-              <div>{obj.line1}</div>
-              <div>{obj.line2}</div>
-              <div>{obj.postCode}, {obj.city}</div>
-              <div>{obj.country}</div>
-            </div>
-          </HoverCardContent>
-        </HoverCard>
-      );
+  function RenderObject(object: any, accessorKey: string, log: TMaintenanceLog) {
+    if(accessorKey === "action")  {
+      return <ActionMenu obj={log} />
     }
-    else if(accessorKey === "action")  {
-      return (
-       <ActionMenu obj={Return} />
-      )
+    if(accessorKey === "issueType") {
+      const type = object as string;
+      return <Badge variant={type === "Damage" ? "destructive" : "secondary"}>{type}</Badge>;
     }
-    
+    return null;
   }
 
   return (
@@ -246,11 +213,10 @@ export function DataTable<TData, TValue>({
                 >
                   {row.getVisibleCells().map((cell) => {
                     const accessorKey = cell.column.id
-
                     return (
                       <TableCell key={cell.id}>
-                        {cell.getValue() !== null && (accessorKey === "action" || accessorKey === "address")
-                          ?  RenderObject(cell.getValue() as object, accessorKey, row.original as TReturn)
+                        {cell.getValue() !== null && (accessorKey === "action" || accessorKey === "issueType")
+                          ?  RenderObject(cell.getValue(), accessorKey, row.original as TMaintenanceLog)
                           : flexRender(cell.column.columnDef.cell, cell.getContext()) 
                         }
                       </TableCell>

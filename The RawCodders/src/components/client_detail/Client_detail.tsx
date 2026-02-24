@@ -71,7 +71,8 @@ export default function ClientDetail() {
         if (!response.ok) throw new Error("Failed to generate summary")
         const data = await response.json()
         setSummary(data.summary)
-      } catch {
+      } catch (err) {
+        console.error("Failed to fetch client summary:", err)
         setSummaryError("Unable to generate AI summary")
       } finally {
         setSummaryLoading(false)

@@ -108,8 +108,8 @@ Be concise, data-driven, and professional. Reference the specific numbers provid
 
 async def generate_client_summary(client_data: dict) -> str:
     """Generate a 3-sentence AI summary for a single client."""
-    client = AsyncOpenAI(api_key=settings.openai_api_key)
-    response = await client.chat.completions.create(
+    openai_client = AsyncOpenAI(api_key=settings.openai_api_key)
+    response = await openai_client.chat.completions.create(
         model="gpt-4o",
         temperature=0.3,
         messages=[

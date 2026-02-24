@@ -9,7 +9,7 @@
  */
 
 import type * as auth from "../auth.js";
-import type * as clients from "../clients.js";
+import type * as clients from "../personnel.js";
 import type * as http from "../http.js";
 import type * as insights from "../insights.js";
 import type * as myFunctions from "../myFunctions.js";

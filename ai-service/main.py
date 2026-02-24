@@ -2,8 +2,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from models import HealthResponse, InsightsResponse
-from pipeline import run_pipeline
+from models import HealthResponse, InsightsResponse, ClientSummaryRequest, ClientSummaryResponse
+from pipeline import run_pipeline, generate_client_summary
 from report_generator import PDFReportGenerator
 
 import traceback
@@ -46,4 +46,15 @@ async def generate_report(data: InsightsResponse):
             headers={"Content-Disposition": "attachment; filename=insights-report.pdf"}
         )
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/client-summary", response_model=ClientSummaryResponse)
+async def client_summary(data: ClientSummaryRequest):
+    """Generate a short AI summary for a single client."""
+    try:
+        summary = await generate_client_summary(data.model_dump())
+        return ClientSummaryResponse(summary=summary)
+    except Exception as e:
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))

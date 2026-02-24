@@ -62,7 +62,6 @@ export function MaintenanceLogModal() {
       if (selectedMaintenanceLog?._id) {
         await updateMaintenanceLog({
           logId: selectedMaintenanceLog._id,
-          equipmentId,
           issueType,
           description,
           logDate,

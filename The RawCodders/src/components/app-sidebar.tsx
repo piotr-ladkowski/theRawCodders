@@ -12,7 +12,7 @@ import {
   IconUsers,
   IconTool,
   IconSend,
-  IconWrenchOff
+  IconSettingsCog
 } from "@tabler/icons-react"
 import { useQuery } from "convex/react"
 import { api } from "../../convex/_generated/api"
@@ -66,7 +66,7 @@ const data = {
     {
       title: "Maintenance",
       url: "/dashboard/maintenance",
-      icon: IconWrenchOff,
+      icon: IconSettingsCog,
     },
     {
       title: "AI Insights",

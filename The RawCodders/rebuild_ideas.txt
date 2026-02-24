@@ -1,0 +1,100 @@
+========================================================
+  Mountain Rescue HQ - App Rebuild Ideas
+========================================================
+
+1. REAL-TIME INCIDENT MAP
+   - Integrate a map component (e.g., Leaflet or Mapbox) on the dashboard
+   - Display active incidents as pins using gpsCoordinates
+   - Color-code pins by severity level (1=green, 5=red)
+   - Show weather conditions as overlays
+   - Click on a pin to see incident details and dispatched resources
+
+2. LIVE DISPATCH BOARD
+   - Create a Kanban-style board for incident management
+   - Columns: Standby → Active → Resolved
+   - Drag-and-drop dispatches between incident stages
+   - Real-time updates when status changes (leveraging Convex subscriptions)
+
+3. PERSONNEL AVAILABILITY DASHBOARD
+   - Live roster showing who is available, on-mission, or off-duty
+   - Shift scheduling component with drag-and-drop
+   - Certification expiry alerts and renewal tracking
+   - Auto-suggest best-fit personnel for new incidents based on certifications and proximity
+
+4. EQUIPMENT LIFECYCLE TRACKER
+   - Visual timeline of each equipment item's lifecycle
+   - Automated maintenance reminders based on lastInspected date
+   - QR code scanning for quick equipment status updates in the field
+   - Integration with inventory management for consumables (first aid supplies, batteries, etc.)
+
+5. WEATHER INTEGRATION
+   - Pull real-time weather data from API (OpenWeatherMap, etc.)
+   - Auto-populate weatherConditions when creating new incidents
+   - Weather alerts for base stations (avalanche warnings, storm forecasts)
+   - Historical weather correlation with incident frequency
+
+6. AI-POWERED INSIGHTS (Enhanced)
+   - Predict high-risk periods based on historical incident data and weather patterns
+   - Personnel workload balancing recommendations
+   - Equipment failure prediction based on maintenance logs
+   - Mission debrief summaries auto-generated from mission_reports
+   - Training gap analysis based on incident difficulty vs. certifications
+
+7. MOBILE-FIRST FIELD APP
+   - PWA (Progressive Web App) for field responders
+   - Offline capability for areas with no signal
+   - GPS auto-detection for incident reporting
+   - Push notifications for new dispatches
+   - Quick status updates (one-tap "arrived on scene", "patient secured", etc.)
+
+8. COMMUNICATION HUB
+   - In-app messaging between dispatched personnel
+   - Integration with radio/satellite communication logs
+   - Automated status broadcast to all team members during active incidents
+   - Emergency SOS button with auto-location sharing
+
+9. REPORTING & ANALYTICS
+   - Monthly/quarterly mission summary reports (PDF export)
+   - Response time analytics (dispatch to arrival)
+   - Incident type distribution charts (already partially implemented)
+   - Personnel performance metrics
+   - Equipment utilization rates
+   - Severity trend analysis over time
+
+10. TRAINING & CERTIFICATION MODULE
+    - Track certification expiry dates with automated reminders
+    - Training session scheduling and attendance tracking
+    - Skill assessment records
+    - Required certifications per incident type mapping
+
+11. MULTI-BASE STATION SUPPORT
+    - Separate dashboards per base station
+    - Cross-station resource sharing requests
+    - Hierarchical coordination (regional → base station → team)
+    - Inter-station dispatch capability
+
+12. INCIDENT TIMELINE
+    - Detailed timeline view for each incident
+    - Log every action: dispatch, arrival, status change, medical interventions
+    - Attach photos and notes at each timeline point
+    - Exportable incident report for official documentation
+
+13. INTEGRATION IDEAS
+    - Hospital notification system for incoming patients
+    - Helicopter/air ambulance dispatch integration
+    - National park visitor registration cross-reference
+    - Emergency services (police, fire) coordination API
+    - Terrain/elevation data integration for route planning
+
+14. DATA MIGRATION STRATEGY
+    - Create migration scripts from old schema (products/clients/etc.) to new schema
+    - Map old seed data patterns to new mountain rescue context
+    - Preserve the AI insights pipeline but retrain for rescue operations metrics
+    - Keep the existing auth system intact
+
+15. UI/UX IMPROVEMENTS
+    - Dark mode optimized for field use (less eye strain at night)
+    - High-contrast mode for harsh sunlight conditions
+    - Larger touch targets for gloved operation
+    - Voice command integration for hands-free operation
+    - Accessibility compliance (WCAG 2.1 AA)

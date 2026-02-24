@@ -222,7 +222,7 @@ async function seedMissionReports(ctx: any, targetTotal: number) {
   const selectedIncidents = resolvedIncidents.slice(0, missing);
 
   for (const incident of selectedIncidents) {
-    const reporter = randomItem(personnel);
+    const reporter = randomItem(personnel) as any;
     await ctx.db.insert("mission_reports", {
       incidentId: incident._id,
       reporterId: reporter._id,

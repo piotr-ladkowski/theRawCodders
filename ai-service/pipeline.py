@@ -57,7 +57,7 @@ async def run_pipeline() -> dict:
 
     # Run all analyses
     raw_metrics = {
-        "temporal": analyze_temporal(data.get("transactions", [])),  # list of transaction rows
+        "temporal": analyze_temporal(data),  # list of transaction rows
         "demographics": analyze_demographics(data),                  # full dict of tables
         "products": analyze_products(data),                          # likely full dict
         "transactions": analyze_transactions(data),                  # likely full dict

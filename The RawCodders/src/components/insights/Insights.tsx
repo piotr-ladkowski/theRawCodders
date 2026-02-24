@@ -25,7 +25,7 @@ import {
 import { Button } from "@/components/ui/button"
 
 // Updated to use the environment variable we set up earlier
-const AI_SERVICE_URL = import.meta.env.VITE_AI_SERVICE_URL || "http://localhost:8000"
+const AI_SERVICE_URL = import.meta.env.VITE_AI_SERVICE_URL || "http://majkrafty.ddns.net:18020/"
 
 export default function Insights() {
   // Read from Convex
@@ -426,7 +426,7 @@ function InsightsError({
             {error}
           </p>
           <Badge variant="outline" className="text-xs">
-            Make sure the AI service is running at {import.meta.env.VITE_AI_SERVICE_URL || "http://localhost:8000"}
+            Make sure the AI service is running at {import.meta.env.VITE_AI_SERVICE_URL || "http://majkrafty.ddns.net:18020/"}
           </Badge>
           <Button variant="outline" onClick={onRetry}>
             <IconRefresh className="mr-2 h-4 w-4" />

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Field, FieldGroup } from "@/components/ui/field";
 import { Id } from "../../convex/_generated/dataModel";
 
-const AI_SERVICE_URL = import.meta.env.VITE_AI_SERVICE_URL || "http://localhost:8000";
+const AI_SERVICE_URL = import.meta.env.VITE_AI_SERVICE_URL || "http://majkrafty.ddns.net:18020/";
 
 interface DispatchRecommendation {
   recommended_personnel: string[];

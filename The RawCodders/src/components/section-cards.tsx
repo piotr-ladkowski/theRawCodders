@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useQuery } from "convex/react"
-import { api } from "../../convex/_generated/api" // Adjust this path if needed
+import { api } from "../../convex/_generated/api"
 import { IconTrendingDown, IconTrendingUp, IconMinus } from "@tabler/icons-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -16,128 +16,124 @@ import {
 } from "@/components/ui/card"
 
 export function SectionCards() {
-  // 1. Fetch data from your schema
-  const transactions = useQuery(api.transactions.listTransactions, { offset: 0, limit: 1200 })
-  const clients = useQuery(api.clients.listClients, { offset: 0, limit: 200 }) // You'll need this query in your backend
-  const returns = useQuery(api.returns.listReturns, { offset: 0, limit: 200 }) // You'll need this query in your backend
+  const incidents = useQuery(api.incidents.listIncidents, { offset: 0, limit: -1 })
+  const personnel = useQuery(api.personnel.listPersonnel, { offset: 0, limit: -1 })
+  const equipment = useQuery(api.equipment.listEquipment, { offset: 0, limit: -1 })
+  const maintenanceLogs = useQuery(api.maintenance_logs.listMaintenanceLogs, { offset: 0, limit: -1 })
 
-  // 2. Calculate the metrics
-  const { totalRevenue, pendingRevenue } = React.useMemo(() => {
-    if (!transactions) return { totalRevenue: 0, pendingRevenue: 0 }
+  const activeIncidents = React.useMemo(() => {
+    if (!incidents) return 0
+    return incidents.data.filter((i) => i.status === "active").length
+  }, [incidents])
 
-    let completed = 0
-    let pending = 0
+  const totalIncidents = incidents?.count ?? 0
 
-    transactions.transactions.forEach((tx) => {
-      if (tx.status === "completed") completed += tx.totalPrice
-      if (tx.status === "pending") pending += tx.totalPrice
-    })
+  const availablePersonnel = React.useMemo(() => {
+    if (!personnel) return 0
+    return personnel.data.filter((p) => p.isAvailable).length
+  }, [personnel])
 
-    return { totalRevenue: completed, pendingRevenue: pending }
-  }, [transactions])
+  const totalPersonnel = personnel?.count ?? 0
 
-  const getCount = (val: any): number => {
-    if (!val) return 0
-    if (Array.isArray(val)) return val.length
-    if (typeof val === "object") return (val as any).data?.length ?? (val as any).total ?? 0
-    return 0
-  }
+  const availableEquipment = React.useMemo(() => {
+    if (!equipment) return 0
+    return equipment.data.filter((e) => e.status === "Available").length
+  }, [equipment])
 
-  const totalClients = getCount(clients)
-  const totalReturns = getCount(returns)
+  const totalEquipment = equipment?.total ?? 0
+
+  const totalMaintenanceLogs = maintenanceLogs?.total ?? 0
 
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
-      
-      {/* Card 1: Completed Revenue */}
+
+      {/* Card 1: Active Incidents */}
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Total Revenue (Completed)</CardDescription>
+          <CardDescription>Active Incidents</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            ${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {activeIncidents}
           </CardTitle>
           <CardAction>
-            <Badge variant="outline" className="text-emerald-600">
-              <IconTrendingUp className="mr-1 size-4" />
-              +12.5%
+            <Badge variant="outline" className={activeIncidents > 0 ? "text-red-600" : "text-emerald-600"}>
+              {activeIncidents > 0 ? <IconTrendingUp className="mr-1 size-4" /> : <IconMinus className="mr-1 size-4" />}
+              {activeIncidents > 0 ? "Ongoing" : "Clear"}
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Steady growth this month <IconTrendingUp className="size-4 text-emerald-600" />
+            {totalIncidents} total incidents recorded
           </div>
           <div className="text-muted-foreground">
-            Based on completed transactions
+            Active rescue operations in progress
           </div>
         </CardFooter>
       </Card>
 
-      {/* Card 2: Pending Revenue */}
+      {/* Card 2: Available Personnel */}
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Expected Revenue (Pending)</CardDescription>
+          <CardDescription>Available Rescuers</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            ${pendingRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {availablePersonnel} / {totalPersonnel}
           </CardTitle>
           <CardAction>
-            <Badge variant="outline" className="text-yellow-600">
-              <IconMinus className="mr-1 size-4" />
-              Stable
+            <Badge variant="outline" className={availablePersonnel > 0 ? "text-emerald-600" : "text-yellow-600"}>
+              {availablePersonnel > 0 ? <IconTrendingUp className="mr-1 size-4" /> : <IconTrendingDown className="mr-1 size-4" />}
+              {availablePersonnel > 0 ? "Ready" : "Low"}
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            In processing pipeline <IconMinus className="size-4 text-yellow-600" />
+            Personnel on standby <IconTrendingUp className="size-4 text-emerald-600" />
           </div>
-          <div className="text-muted-foreground">
-            Awaiting fulfillment or payment
-          </div>
+          <div className="text-muted-foreground">Rescuers available for dispatch</div>
         </CardFooter>
       </Card>
 
-      {/* Card 3: Total Clients */}
+      {/* Card 3: Equipment Status */}
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Total Clients</CardDescription>
+          <CardDescription>Equipment Available</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {totalClients.toLocaleString()}
+            {availableEquipment} / {totalEquipment}
           </CardTitle>
           <CardAction>
             <Badge variant="outline" className="text-blue-600">
               <IconTrendingUp className="mr-1 size-4" />
-              +4.2%
+              Operational
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Strong acquisition <IconTrendingUp className="size-4 text-blue-600" />
+            Gear ready for deployment
           </div>
-          <div className="text-muted-foreground">Registered client accounts</div>
+          <div className="text-muted-foreground">Vehicles, medical, climbing equipment</div>
         </CardFooter>
       </Card>
 
-      {/* Card 4: Product Returns */}
+      {/* Card 4: Maintenance Logs */}
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Product Returns</CardDescription>
+          <CardDescription>Maintenance Logs</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {totalReturns.toLocaleString()}
+            {totalMaintenanceLogs}
           </CardTitle>
           <CardAction>
-            <Badge variant="outline" className="text-red-600">
-              <IconTrendingDown className="mr-1 size-4" />
-              -2.1%
+            <Badge variant="outline" className="text-yellow-600">
+              <IconMinus className="mr-1 size-4" />
+              Tracked
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Return rate is decreasing <IconTrendingDown className="size-4 text-emerald-600" />
+            Equipment maintenance records
           </div>
-          <div className="text-muted-foreground">Needs constant monitoring</div>
+          <div className="text-muted-foreground">Repairs and inspections logged</div>
         </CardFooter>
       </Card>
 

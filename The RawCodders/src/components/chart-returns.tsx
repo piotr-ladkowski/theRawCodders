@@ -33,14 +33,14 @@ import {
 } from "@/components/ui/toggle-group"
 
 const chartConfig = {
-  returns: { label: "Returns", color: "var(--accent)" },
+  logs: { label: "Maintenance Logs", color: "var(--accent)" },
 } satisfies ChartConfig
 
-export function ReturnsDashboard() {
+export function MaintenanceDashboard() {
   const isMobile = useIsMobile()
   const [timeRange, setTimeRange] = React.useState("90d")
 
-  const returnsWithDates = useQuery(api.returns.listReturnsWithDates)
+  const maintenanceLogs = useQuery(api.maintenance_logs.listMaintenanceLogs, { offset: 0, limit: -1 })
 
   React.useEffect(() => {
     if (isMobile) {
@@ -49,26 +49,26 @@ export function ReturnsDashboard() {
   }, [isMobile])
 
   const chartData = React.useMemo(() => {
-    if (!returnsWithDates) return []
+    if (!maintenanceLogs) return []
 
-    const groupedData: Record<string, { date: string; returns: number }> = {}
+    const groupedData: Record<string, { date: string; logs: number }> = {}
 
-    returnsWithDates.forEach((ret) => {
-      if (!ret.date) return
+    maintenanceLogs.data.forEach((log) => {
+      if (!log.logDate) return
 
-      const dateStr = ret.date.split("T")[0]
+      const dateStr = log.logDate.split("T")[0]
 
       if (!groupedData[dateStr]) {
-        groupedData[dateStr] = { date: dateStr, returns: 0 }
+        groupedData[dateStr] = { date: dateStr, logs: 0 }
       }
 
-      groupedData[dateStr].returns += 1
+      groupedData[dateStr].logs += 1
     })
 
     return Object.values(groupedData).sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     )
-  }, [returnsWithDates])
+  }, [maintenanceLogs])
 
   const filteredData = chartData.filter((item) => {
     const date = new Date(item.date)
@@ -87,12 +87,12 @@ export function ReturnsDashboard() {
   return (
     <Card className="@container/card">
       <CardHeader>
-        <CardTitle>Returns Over Time</CardTitle>
+        <CardTitle>Maintenance Over Time</CardTitle>
         <CardDescription>
           <span className="hidden @[540px]/card:block">
-            Number of product returns by date
+            Equipment maintenance logs by date
           </span>
-          <span className="@[540px]/card:hidden">Returns trends</span>
+          <span className="@[540px]/card:hidden">Maintenance trends</span>
         </CardDescription>
         <CardAction>
           <ToggleGroup
@@ -123,17 +123,17 @@ export function ReturnsDashboard() {
         </CardAction>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        {!returnsWithDates ? (
+        {!maintenanceLogs ? (
           <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-            Loading returns data...
+            Loading maintenance data...
           </div>
         ) : (
           <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
             <BarChart data={filteredData}>
               <defs>
-                <linearGradient id="fillReturns" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-returns)" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="var(--color-returns)" stopOpacity={0.1} />
+                <linearGradient id="fillLogs" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--color-logs)" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="var(--color-logs)" stopOpacity={0.1} />
                 </linearGradient>
               </defs>
               <CartesianGrid vertical={false} />
@@ -160,8 +160,8 @@ export function ReturnsDashboard() {
                 }
               />
               <Bar
-                dataKey="returns"
-                fill="url(#fillReturns)"
+                dataKey="logs"
+                fill="url(#fillLogs)"
                 radius={[4, 4, 0, 0]}
               />
             </BarChart>

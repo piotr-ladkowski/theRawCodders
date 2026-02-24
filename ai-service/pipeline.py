@@ -96,14 +96,15 @@ async def run_pipeline() -> dict:
 
 CLIENT_SUMMARY_PROMPT = """You are a senior business analyst for an e-commerce platform.
 You will receive JSON data containing a specific client's statistics including their
-spending, order count, return rate, and average review rating.
+spending, order count, return rate, average review rating and review texts.
 
 Produce exactly 3 sentences summarizing this client's profile:
 1. First sentence about their spending behavior.
-2. Second sentence about their review/rating activity.
+2. Second sentence about their review/rating activity. Especially highlight the sentiment of their reviews and if they are generally satisfied or dissatisfied based on the average rating and review texts.
 3. Third sentence about their cancellation/return rate.
 
-Be concise, data-driven, and professional. Reference the specific numbers provided."""
+Be concise, data-driven, and professional. Reference the specific numbers provided.
+We want to know if they are a high-value customer, if they are satisfied or dissatisfied based on reviews, and if they are a risk for returns/cancellations."""
 
 
 async def generate_client_summary(client_data: dict) -> str:

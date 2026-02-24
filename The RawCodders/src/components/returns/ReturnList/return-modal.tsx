@@ -26,7 +26,7 @@ import { useReturnsContext } from "./returns-context";
 import { Id } from "../../../../convex/_generated/dataModel";
 
 export function ReturnModal() {
-  const { selectedReturn, setSelectedReturn, editReturnModalState, setEditReturnModalState } = useReturnsContext();
+  const { selectedReturn, setSelectedReturn, editReturnModalState, setEditReturnModalState, setModalObserver } = useReturnsContext();
   const clearSelectedTimeoutRef = useRef<number | null>(null);
 
   const createReturn = useMutation(api.returns.insertReturn);
@@ -74,6 +74,8 @@ export function ReturnModal() {
           description
         });
       }
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setModalObserver((prev) => (prev + 1) % 1000);
       setEditReturnModalState(false); // Close the modal on success
       scheduleClearSelectedReturn();
     } catch (error) {

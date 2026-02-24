@@ -7,6 +7,8 @@ type ReturnsContextValue = {
   setSelectedReturn: Dispatch<SetStateAction<TReturn | undefined>>;
   editReturnModalState: boolean
   setEditReturnModalState: Dispatch<SetStateAction<boolean>>
+  modalObserver: number,
+  setModalObserver: Dispatch<SetStateAction<number>>
 };
 
 const ReturnsContext = createContext<ReturnsContextValue | null>(null);

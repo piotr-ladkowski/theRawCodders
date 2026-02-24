@@ -220,7 +220,7 @@ export function DataTable<TData, TValue>({
           </div>
           <PaginationControl className="flex flex-row justify-end" />
         </div>
-      <div className="overflow-hidden text-center rounded-md bTransaction">
+      <div className="overflow-hidden text-center rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -270,8 +270,9 @@ export function DataTable<TData, TValue>({
             )}
           </TableBody>
         </Table>
-        <PaginationControl />
+        
       </div>
+      <PaginationControl />
     </>
   )
 }

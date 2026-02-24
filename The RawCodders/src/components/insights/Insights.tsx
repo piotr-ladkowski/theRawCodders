@@ -50,7 +50,7 @@ export default function Insights() {
         executive_summary: json.executive_summary,
         key_findings: json.key_findings,
         recommendations: json.recommendations,
-        marketing_actions: json.marketing_actions ?? [],
+        operational_actions: json.operational_actions ?? [],
         raw_metrics: json.raw_metrics,
       })
     } catch (err) {
@@ -73,7 +73,7 @@ export default function Insights() {
           executive_summary: latestInsight.executive_summary,
           key_findings: latestInsight.key_findings,
           recommendations: latestInsight.recommendations,
-          marketing_actions: latestInsight.marketing_actions ?? [],
+          operational_actions: latestInsight.operational_actions ?? [],
           raw_metrics: latestInsight.raw_metrics,
         }),
       })
@@ -210,23 +210,23 @@ export default function Insights() {
                 </CardContent>
               </Card>
 
-              {/* Marketing Actions */}
-              {latestInsight.marketing_actions && latestInsight.marketing_actions.length > 0 && (
+              {/* Operational Actions */}
+              {latestInsight.operational_actions && latestInsight.operational_actions.length > 0 && (
                 <Card className={'mt-6'}>
                   <CardHeader>
                     <div className="flex items-center gap-2">
                       <IconSpeakerphone className="h-5 w-5 text-primary" />
                       <div>
-                        <CardTitle>Marketing Actions</CardTitle>
+                        <CardTitle>Operational Actions</CardTitle>
                         <CardDescription>
-                          AI-proposed campaign ideas based on your data patterns
+                          AI-proposed operational steps based on your data patterns
                         </CardDescription>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      {latestInsight.marketing_actions.map((action: string, i: number) => (
+                      {latestInsight.operational_actions.map((action: string, i: number) => (
                         <div
                           key={i}
                           className="rounded-lg border p-4 space-y-1"
@@ -255,47 +255,47 @@ export default function Insights() {
 }
 
 function MetricCards({ metrics }: { metrics: any }) {
-  const { demographics, transactions, returns } = metrics || {}
+  const { demographics, incidents, maintenance } = metrics || {}
 
   const cards = [
     {
-      title: "Total Transactions",
-      value: transactions?.total_transactions ?? "—",
+      title: "Total Incidents",
+      value: incidents?.total_incidents ?? "—",
       icon: IconShoppingCart,
     },
     {
-      title: "Avg Order Value",
-      value: transactions?.avg_order_value != null ? `$${transactions.avg_order_value}` : "—",
+      title: "Avg Severity",
+      value: incidents?.avg_severity != null ? `${incidents.avg_severity}` : "—",
       icon: IconChartBar,
     },
     {
-      title: "Unique Customers",
-      value: demographics?.total_unique_customers ?? "—",
+      title: "Total Personnel",
+      value: demographics?.total_personnel ?? "—",
       icon: IconUsers,
     },
     {
-      title: "Repeat Customers",
-      value: demographics?.repeat_customers ?? "—",
+      title: "Available Personnel",
+      value: demographics?.available_personnel ?? "—",
       icon: IconUsers,
     },
     {
-      title: "Avg Basket Size",
-      value: transactions?.avg_basket_size != null ? `${transactions.avg_basket_size} items` : "—",
+      title: "Active Incidents",
+      value: incidents?.active_incidents ?? "—",
       icon: IconShoppingCart,
     },
     {
-      title: "Total Returns",
-      value: returns?.total_returns ?? "—",
+      title: "Maintenance Logs",
+      value: maintenance?.total_logs ?? "—",
       icon: IconTruckReturn,
     },
     {
-      title: "Return Rate",
-      value: returns?.overall_return_rate != null ? `${(returns.overall_return_rate * 100).toFixed(1)}%` : "—",
+      title: "Resolution Rate",
+      value: incidents?.resolution_rate != null ? `${(incidents.resolution_rate * 100).toFixed(1)}%` : "—",
       icon: IconTruckReturn,
     },
     {
-      title: "Cancellation Rate",
-      value: transactions?.cancellation_analysis != null ? `${(transactions.cancellation_analysis.cancellation_rate * 100).toFixed(1)}%` : "—",
+      title: "Avg Response Time",
+      value: incidents?.avg_response_time != null ? `${incidents.avg_response_time}` : "—",
       icon: IconClock,
     },
   ]

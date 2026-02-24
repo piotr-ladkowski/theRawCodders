@@ -6,13 +6,13 @@ import {
   IconFileAi,
   IconFileDescription,
   IconFileWord,
-  IconCreditCardPay,
+  IconAlertTriangle,
   IconReport,
   IconSettings,
   IconUsers,
-  IconShoppingCart,
-  IconAssembly,
-  IconTruckReturn
+  IconTool,
+  IconSend,
+  IconWrenchOff
 } from "@tabler/icons-react"
 import { useQuery } from "convex/react"
 import { api } from "../../convex/_generated/api"
@@ -44,29 +44,29 @@ const data = {
       icon: IconDashboard,
     },
     {
-      title: "Transactions",
-      url: "/dashboard/transactions",
-      icon: IconCreditCardPay,
+      title: "Incidents",
+      url: "/dashboard/incidents",
+      icon: IconAlertTriangle,
     },
     {
-      title: "Orders",
-      url: "/dashboard/orders",
-      icon: IconShoppingCart,
+      title: "Dispatches",
+      url: "/dashboard/dispatches",
+      icon: IconSend,
     },
     {
-      title: "Products",
-      url: "/dashboard/products",
-      icon: IconAssembly,
+      title: "Equipment",
+      url: "/dashboard/equipment",
+      icon: IconTool,
     },
     {
-      title: "Clients",
-      url: "/dashboard/clients",
+      title: "Personnel",
+      url: "/dashboard/personnel",
       icon: IconUsers,
     },
     {
-      title: "Returns",
-      url: "/dashboard/returns",
-      icon: IconTruckReturn,
+      title: "Maintenance",
+      url: "/dashboard/maintenance",
+      icon: IconWrenchOff,
     },
     {
       title: "AI Insights",
@@ -176,7 +176,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:!p-1.5 hover:bg-inherit"
             >
               <Link to="/">
-                <span className="text-base font-semibold">The Raw Codders App</span>
+                <span className="text-base font-semibold">Mountain Rescue HQ</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

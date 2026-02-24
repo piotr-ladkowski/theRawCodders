@@ -7,6 +7,8 @@ type TransactionsContextValue = {
   setSelectedTransaction: Dispatch<SetStateAction<TTransaction | undefined>>;
   editTransactionModalState: boolean
   setEditTransactionModalState: Dispatch<SetStateAction<boolean>>
+  modalObserver: number,
+  setModalObserver: Dispatch<SetStateAction<number>>
 };
 
 const TransactionsContext = createContext<TransactionsContextValue | null>(null);

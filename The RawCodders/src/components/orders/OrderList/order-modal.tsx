@@ -114,11 +114,6 @@ export function OrderModal() {
         }
       }}
     >
-        <DialogTrigger asChild>
-          <Button>
-            <IconPlus className="text-white"/>
-          </Button>
-        </DialogTrigger>
         <DialogContent className="sm:max-w-sm ">
           <form onSubmit={(event) => { void handleSubmit(event); }}>
             <DialogHeader className="mb-4">

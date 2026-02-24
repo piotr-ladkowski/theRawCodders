@@ -28,7 +28,7 @@ export function SectionCards() {
     let completed = 0
     let pending = 0
 
-    transactions.forEach((tx) => {
+    transactions.transactions.forEach((tx) => {
       if (tx.status === "completed") completed += tx.totalPrice
       if (tx.status === "pending") pending += tx.totalPrice
     })

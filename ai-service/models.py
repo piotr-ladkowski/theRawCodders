@@ -1,30 +1,15 @@
-from typing import Optional
+from pydantic import BaseModel, Field
+from typing import List, Dict, Any, Optional
 
-from pydantic import BaseModel
+class MetricData(BaseModel):
+    incidents: Dict[str, Any]
+    personnel: Dict[str, Any]
+    equipment: Dict[str, Any]
+    maintenance: Dict[str, Any]
 
-
-class HealthResponse(BaseModel):
-    status: str = "ok"
-
-
-class InsightsResponse(BaseModel):
+class AnalysisResult(BaseModel):
     executive_summary: str
-    key_findings: dict
-    recommendations: list[str]
-    marketing_actions: list[str]
-    raw_metrics: dict
-
-
-class ClientSummaryRequest(BaseModel):
-    name: str
-    totalSpending: float
-    totalOrders: int
-    totalReturns: int
-    returnRate: float
-    averageRating: Optional[float]
-    totalRatings: int
-    reviewList: list[str]
-
-
-class ClientSummaryResponse(BaseModel):
-    summary: str
+    key_findings: Dict[str, Any]
+    recommendations: List[str]
+    operational_actions: List[str] = Field(default_factory=list) # Replaces marketing_actions
+    raw_metrics: MetricData

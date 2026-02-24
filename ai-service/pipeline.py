@@ -1,175 +1,107 @@
 import json
-from typing import Any
-
+import logging
 from openai import AsyncOpenAI
-
 from config import settings
-from convex_client import fetch_all
-from analyzers import (
-    analyze_temporal,
-    analyze_demographics,
-    analyze_products,
-    analyze_transactions,
-    analyze_returns,
-)
+from models import AnalysisResult, MetricData
 
-SYSTEM_PROMPT = """You are a senior business analyst for an e-commerce platform.
-You will receive JSON data containing statistical analyses of the platform's clients,
-products, transactions, orders, and returns.
+logger = logging.getLogger(__name__)
+client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 
-Produce a structured report with:
-1. **Executive Summary** — 2-3 sentence overview of the business health.
-2. **Key Findings** — grouped by category (Temporal Trends, Customer Demographics,
-   Product Performance, Transaction Patterns, Returns Analysis). Each finding should
-   reference the specific numbers from the data.
-3. **Actionable Recommendations** — concrete, prioritized steps the business should take.
-4. **Marketing Actions** — 5-8 specific, creative marketing campaign ideas based on the data.
-   For each action include: a catchy campaign name, the target audience segment,
-   the channel (email, social media, in-app, SMS, etc.), expected impact, and a brief
-   description of the campaign. Base these on actual patterns in the data — e.g. if a
-   demographic spends more, target them; if certain products are often co-purchased,
-   create bundles; if there's a peak day/hour, time promotions accordingly.
+async def generate_insights(data: dict) -> AnalysisResult:
+    logger.info("Calculating Tactical Metrics...")
+    
+    incidents = data.get("incidents", [])
+    personnel = data.get("personnel", [])
+    equipment = data.get("equipment", [])
+    maintenance = data.get("maintenance_logs", [])
 
-Be data-driven. Cite numbers. Flag any statistically significant results.
-Keep the tone professional but accessible."""
+    # 1. Calculate Operations Metrics
+    total_incidents = len(incidents)
+    avg_severity = sum(i.get("severityLevel", 1) for i in incidents) / max(total_incidents, 1)
+    
+    available_personnel = len([p for p in personnel if p.get("isAvailable", False)])
+    active_rescuers = len(personnel) - available_personnel
 
+    in_use_eq = len([e for e in equipment if e.get("status") == "In Use"])
+    critical_maintenance = len([m for m in maintenance if m.get("issueType") == "Damage"])
 
-def _make_serializable(obj: Any) -> Any:
-    """Convert numpy/pandas types to native Python for JSON serialization."""
-    import numpy as np
-
-    if isinstance(obj, (np.integer,)):
-        return int(obj)
-    if isinstance(obj, (np.floating,)):
-        return float(obj)
-    if isinstance(obj, np.ndarray):
-        return obj.tolist()
-    if isinstance(obj, dict):
-        return {str(k): _make_serializable(v) for k, v in obj.items()}
-    if isinstance(obj, (list, tuple)):
-        return [_make_serializable(i) for i in obj]
-    return obj
-
-
-async def run_pipeline() -> dict:
-    """Run all analyzers and send results to OpenAI for narrative generation."""
-    data = await fetch_all()
-
-    # Run all analyses
-    raw_metrics = {
-        "temporal": analyze_temporal(data),  # list of transaction rows
-        "demographics": analyze_demographics(data),                  # full dict of tables
-        "products": analyze_products(data),                          # likely full dict
-        "transactions": analyze_transactions(data),                  # likely full dict
-        "returns": analyze_returns(data),                            # likely full dict
-    }
-
-    raw_metrics = _make_serializable(raw_metrics)
-
-    # Send to OpenAI
-    client = AsyncOpenAI(api_key=settings.openai_api_key)
-    response = await client.chat.completions.create(
-        model="gpt-4o",
-        temperature=0.3,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": f"Here is the analysis data:\n\n```json\n{json.dumps(raw_metrics, indent=2)}\n```",
-            },
-        ],
+    raw_metrics = MetricData(
+        incidents={
+            "total_incidents": total_incidents, 
+            "avg_severity": round(avg_severity, 1), 
+            "avg_response_time": "12m" # Placeholder for future GPS timestamp math
+        },
+        personnel={
+            "available_personnel": available_personnel, 
+            "active_rescuers": active_rescuers
+        },
+        equipment={
+            "in_use": in_use_eq, 
+            "total": len(equipment)
+        },
+        maintenance={
+            "total_logs": len(maintenance), 
+            "critical_issues": critical_maintenance
+        }
     )
 
-    narrative = response.choices[0].message.content
+    # 2. Generate AI Tactical Report
+    logger.info("Generating AI Analysis via OpenAI...")
+    prompt = f"""
+    You are an expert AI Tactical Advisor for a Mountain Rescue Command Center.
+    Analyze the following operational data and provide a highly actionable intelligence report.
+    
+    Current Operational Metrics:
+    {raw_metrics.model_dump_json()}
+    
+    Instructions:
+    1. 'executive_summary': A 2-sentence tactical overview of current operational readiness.
+    2. 'key_findings': A dictionary summarizing risks (e.g., high incident severity vs available personnel). Include a 'narrative' string with bullet points formatted with **bold** headers.
+    3. 'recommendations': 3 to 5 concrete steps to improve response capabilities.
+    4. 'operational_actions': 2 to 4 immediate, specific orders (e.g., 'Deploy 2 medics to Sector B', 'Ground damaged snowmobiles').
+    
+    Return ONLY a valid JSON object matching the requested schema exactly.
+    """
 
-    # Parse the narrative into sections
-    sections = _parse_narrative(narrative)
+    try:
+        response = await client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "system", "content": prompt}],
+            response_format={"type": "json_object"},
+            temperature=0.4
+        )
+        
+        result_dict = json.loads(response.choices[0].message.content)
+        result_dict["raw_metrics"] = raw_metrics.model_dump()
+        
+        return AnalysisResult(**result_dict)
+        
+    except Exception as e:
+        logger.error(f"Failed to generate insights: {e}")
+        raise e
+    
+async def generate_personnel_summary(personnel_data: dict) -> str:
+    logger.info(f"Generating tactical summary for personnel: {personnel_data.get('name')}")
+    
+    prompt = f"""
+    You are an AI for a Mountain Rescue Command Center. 
+    Write a brief, 2-sentence tactical summary of this rescuer's profile and readiness based on their data:
+    
+    Name: {personnel_data.get('name')}
+    Role: {personnel_data.get('role')}
+    Certifications: {', '.join(personnel_data.get('certifications', []))}
+    Recent Missions: {personnel_data.get('recent_incidents', [])}
+    
+    Focus on their expertise level and typical incident exposure. Be concise and professional.
+    """
 
-    return {
-        "executive_summary": sections.get("executive_summary", narrative),
-        "key_findings": sections.get("key_findings", {}),
-        "recommendations": sections.get("recommendations", []),
-        "marketing_actions": sections.get("marketing_actions", []),
-        "raw_metrics": raw_metrics,
-    }
-
-
-CLIENT_SUMMARY_PROMPT = """You are a senior business analyst for an e-commerce platform.
-You will receive JSON data containing a specific client's statistics including their
-spending, order count, return rate, average review rating and review texts.
-
-Produce exactly 3 sentences summarizing this client's profile:
-1. First sentence about their spending behavior.
-2. Second sentence about their review/rating activity. Especially highlight the sentiment of their reviews and if they are generally satisfied or dissatisfied based on the average rating and review texts.
-3. Third sentence about their cancellation/return rate.
-
-Be concise, data-driven, and professional. Reference the specific numbers provided.
-We want to know if they are a high-value customer, if they are satisfied or dissatisfied based on reviews, and if they are a risk for returns/cancellations. If there is there is no data about
-certain point, you can skip a sentance, for instance if there is no reviews you can not write about them"""
-
-
-async def generate_client_summary(client_data: dict) -> str:
-    """Generate a 3-sentence AI summary for a single client."""
-    openai_client = AsyncOpenAI(api_key=settings.openai_api_key)
-    response = await openai_client.chat.completions.create(
-        model="gpt-4o",
-        temperature=0.3,
-        messages=[
-            {"role": "system", "content": CLIENT_SUMMARY_PROMPT},
-            {
-                "role": "user",
-                "content": f"Here is the client data:\n\n```json\n{json.dumps(client_data, indent=2)}\n```",
-            },
-        ],
-    )
-    return response.choices[0].message.content.strip()
-
-
-def _parse_narrative(text: str) -> dict:
-    """Best-effort parse of the LLM narrative into structured sections."""
-    result: dict[str, Any] = {}
-    lines = text.split("\n")
-    current_section = None
-    current_content: list[str] = []
-
-    section_map = {
-        "executive summary": "executive_summary",
-        "key findings": "key_findings",
-        "actionable recommendations": "recommendations",
-        "recommendations": "recommendations",
-        "marketing actions": "marketing_actions",
-        "marketing campaigns": "marketing_actions",
-    }
-
-    def flush():
-        nonlocal current_section, current_content
-        if current_section and current_content:
-            content = "\n".join(current_content).strip()
-            if current_section in ("recommendations", "marketing_actions"):
-                # Split into list items
-                items = [
-                    line.lstrip("0123456789.-) ").strip()
-                    for line in content.split("\n")
-                    if line.strip() and not line.strip().startswith("#")
-                ]
-                result[current_section] = [i for i in items if i]
-            elif current_section == "key_findings":
-                result[current_section] = {"narrative": content}
-            else:
-                result[current_section] = content
-        current_content = []
-
-    for line in lines:
-        stripped = line.strip().lstrip("#").strip().lower()
-        matched = False
-        for keyword, key in section_map.items():
-            if keyword in stripped and len(stripped) < 50:
-                flush()
-                current_section = key
-                matched = True
-                break
-        if not matched:
-            current_content.append(line)
-
-    flush()
-    return result
+    try:
+        response = await client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.5
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        logger.error(f"Failed to generate personnel summary: {e}")
+        return "Tactical profile generation failed."

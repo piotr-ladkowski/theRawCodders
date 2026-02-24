@@ -5,7 +5,7 @@ from config import settings
 from models import AnalysisResult, MetricData
 
 logger = logging.getLogger(__name__)
-client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+client = AsyncOpenAI(api_key=settings.openai_api_key)
 
 async def generate_insights(data: dict) -> AnalysisResult:
     logger.info("Calculating Tactical Metrics...")

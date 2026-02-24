@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     openai_api_key: str
     cache_ttl_seconds: int = 300
 
-    model_config = {"env_file": ".env"}
+    model_config = {"env_file": ".env.local"}
 
 
 settings = Settings()

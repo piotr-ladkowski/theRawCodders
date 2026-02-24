@@ -106,10 +106,12 @@ export const seed = mutation({
       // Ensure certifications are unique-ish per person
       const certs = uniqueRandomItems(CERTIFICATIONS, randomInt(1, 3));
 
-      const existing = await ctx.db
-        .query("personnel")
-        .withIndex("by_email", (q) => q.eq("email", email))
-        .unique();
+      const existingMatches = await ctx.db
+      .query("personnel")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .collect();
+
+      const existing = existingMatches[0] ?? null;
 
       const doc = {
         name,

@@ -13,7 +13,7 @@ async def _fetch_table(client: httpx.AsyncClient, function_path: str) -> list[di
     """Fetch a single table via the Convex HTTP query API."""
     resp = await client.post(
         f"{settings.convex_url}/api/query",
-        json={"path": function_path, "args": {}},
+        json={"path": function_path, "args": {"limit": 100000, "offset": 0}},
     )
     resp.raise_for_status()
     data = resp.json()

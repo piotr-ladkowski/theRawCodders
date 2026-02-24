@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, Dispatch, SetStateAction } from "react"
-
 import {
   ColumnDef,
   flexRender,
@@ -25,8 +24,8 @@ import {
 } from "@/components/ui/hover-card"
 
 import { Button } from "@/components/ui/button"
-
-import { IconAddressBook, IconDotsVertical, IconChevronLeft, IconChevronRight } from "@tabler/icons-react"
+import { Badge } from "@/components/ui/badge"
+import { IconDotsVertical, IconChevronLeft, IconChevronRight, IconCertificate } from "@tabler/icons-react"
 
 import {
   AlertDialog,
@@ -46,8 +45,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useClientsContext } from "./clients-context"
-import type { TClient } from "./columns"
+import { usePersonnelContext } from "./personnel-context"
+import type { TPersonnel } from "./columns"
 
 import { 
   Select,
@@ -82,8 +81,8 @@ export function DataTable<TData, TValue>({
   data,
   pageSettings
 }: DataTableProps<TData, TValue>) {
-  const { setSelectedClient, setEditClientModalState } = useClientsContext()
-  const deleteClientMutation = useMutation(api.clients.deleteClient)
+  const { setSelectedPersonnel, setEditPersonnelModalState } = usePersonnelContext()
+  const deletePersonnelMutation = useMutation(api.personnel.deletePersonnel)
   const navigate = useNavigate()
   const table = useReactTable({
     data,
@@ -91,7 +90,7 @@ export function DataTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
   })
 
-  function ActionMenu({obj}: {obj: TClient}) {
+  function ActionMenu({obj}: {obj: TPersonnel}) {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
     return (
@@ -104,13 +103,18 @@ export function DataTable<TData, TValue>({
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => { setSelectedClient(obj); setEditClientModalState(true);}}>
+              <DropdownMenuItem onClick={(e) => { 
+                e.stopPropagation(); 
+                setSelectedPersonnel(obj); 
+                setEditPersonnelModalState(true);
+              }}>
                   Edit
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="hover:!bg-red-400"
                 onSelect={(event) => {
                   event.preventDefault()
+                  event.stopPropagation()
                   setIsDeleteDialogOpen(true)
                 }}
               >
@@ -120,21 +124,20 @@ export function DataTable<TData, TValue>({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <AlertDialogContent>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this client from our servers.
+              This action cannot be undone. This will permanently delete this personnel member from the system.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() =>{void deleteClientMutation({ clientId: obj._id })}}>Continue</AlertDialogAction>
+            <AlertDialogAction onClick={() =>{void deletePersonnelMutation({ personnelId: obj._id })}}>Continue</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     )
-
   }
 
   function PaginationControl({className}: {className?: string}) {
@@ -163,39 +166,36 @@ export function DataTable<TData, TValue>({
     )
   }
 
-  function RenderObject(object: object, accessorKey: string, client: TClient) {
-    const obj = object as Record<string, any>;
-
-    
-    // Check if this is an address object
-    if (accessorKey === "address") {
+  function RenderObject(value: any, accessorKey: string, personnel: TPersonnel) {
+    if (accessorKey === "action")  {
+      return <ActionMenu obj={personnel} />
+    }
+    if (accessorKey === "certifications") {
+      const certs = value as string[];
+      if (!certs || certs.length === 0) return <span className="text-muted-foreground text-sm">None</span>;
       return (
         <HoverCard openDelay={10} closeDelay={100}>
           <HoverCardTrigger asChild>
-            <Button variant="ghost"><IconAddressBook /></Button>
+            <Button variant="ghost"><IconCertificate className="mr-2 h-4 w-4"/> {certs.length}</Button>
           </HoverCardTrigger>
           <HoverCardContent side="left" className="w-48">
             <div className="text-sm space-y-1">
-              <div>{obj.line1}</div>
-              <div>{obj.line2}</div>
-              <div>{obj.postCode}, {obj.city}</div>
-              <div>{obj.country}</div>
+              {certs.map((c, i) => <div key={i}>• {c}</div>)}
             </div>
           </HoverCardContent>
         </HoverCard>
       );
     }
-    else if(accessorKey === "action")  {
+    if (accessorKey === "isAvailable") {
+      const isAvailable = value as boolean;
       return (
-       <ActionMenu obj={client} />
-      )
+        <Badge variant={isAvailable ? "default" : "destructive"}>
+          {isAvailable ? "Available" : "Unavailable"}
+        </Badge>
+      );
     }
-    
+    return null;
   }
-
-
-
-
 
   return (
     <>
@@ -250,17 +250,18 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && "selected"}
                   className="cursor-pointer"
                   onClick={() => {
-                    const client = row.original as TClient
-                    void navigate(`/dashboard/clients/${client._id}`)
+                    const personnel = row.original as TPersonnel
+                    void navigate(`/dashboard/personnel/${personnel._id}`)
                   }}
                 >
                   {row.getVisibleCells().map((cell) => {
                     const accessorKey = cell.column.id
+                    const value = cell.getValue()
 
                     return (
                       <TableCell key={cell.id}>
-                        {cell.getValue() !== null && (accessorKey === "action" || accessorKey === "address")
-                          ?  RenderObject(cell.getValue() as object, accessorKey, row.original as TClient)
+                        {(accessorKey === "action" || accessorKey === "certifications" || accessorKey === "isAvailable")
+                          ? RenderObject(value, accessorKey, row.original as TPersonnel)
                           : flexRender(cell.column.columnDef.cell, cell.getContext()) 
                         }
                       </TableCell>

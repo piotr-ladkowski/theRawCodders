@@ -9,15 +9,15 @@
  */
 
 import type * as auth from "../auth.js";
-import type * as clients from "../personnel.js";
+import type * as dispatches from "../dispatches.js";
+import type * as equipment from "../equipment.js";
 import type * as http from "../http.js";
+import type * as incidents from "../incidents.js";
 import type * as insights from "../insights.js";
+import type * as maintenance_logs from "../maintenance_logs.js";
 import type * as myFunctions from "../myFunctions.js";
-import type * as orders from "../dispatches.js";
-import type * as products from "../equipment.js";
-import type * as returns from "../maintenance_logs.js";
+import type * as personnel from "../personnel.js";
 import type * as seed from "../seed.js";
-import type * as transactions from "../incidents.js";
 
 import type {
   ApiFromModules,
@@ -27,15 +27,15 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
-  clients: typeof clients;
+  dispatches: typeof dispatches;
+  equipment: typeof equipment;
   http: typeof http;
+  incidents: typeof incidents;
   insights: typeof insights;
+  maintenance_logs: typeof maintenance_logs;
   myFunctions: typeof myFunctions;
-  orders: typeof orders;
-  products: typeof products;
-  returns: typeof returns;
+  personnel: typeof personnel;
   seed: typeof seed;
-  transactions: typeof transactions;
 }>;
 
 /**

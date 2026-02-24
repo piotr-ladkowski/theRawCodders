@@ -9,7 +9,7 @@ import { ClientsProvider } from "./ClientList/clients-context";
 import { Spinner } from "../ui/spinner";
 
 export default function Clients() {
-  const clients = useQuery(api.clients.listClients, { offset: 0, limit: 50 });
+  const clients = useQuery(api.clients.listClients, { offset: 0, limit: 200 });
   const [selectedClient, setSelectedClient] = useState<TClient>();
   const [editClientModalState, setEditClientModalState] = useState<boolean>(false);
 

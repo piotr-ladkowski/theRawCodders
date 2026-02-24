@@ -18,8 +18,8 @@ import {
 export function SectionCards() {
   // 1. Fetch data from your schema
   const transactions = useQuery(api.transactions.listTransactions, { offset: 0, limit: 50 })
-  const clients = useQuery(api.clients.listClients, { offset: 0, limit: 50 }) // You'll need this query in your backend
-  const returns = useQuery(api.returns.listReturns, { offset: 0, limit: 50 }) // You'll need this query in your backend
+  const clients = useQuery(api.clients.listClients, { offset: 0, limit: 200 }) // You'll need this query in your backend
+  const returns = useQuery(api.returns.listReturns, { offset: 0, limit: 200 }) // You'll need this query in your backend
 
   // 2. Calculate the metrics
   const { totalRevenue, pendingRevenue } = React.useMemo(() => {

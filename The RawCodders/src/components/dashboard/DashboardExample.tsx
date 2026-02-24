@@ -14,7 +14,7 @@ export default function DashboardExample() {
 
   if (!incidentsQuery || !personnelQuery || !equipmentQuery) {
     return (
-      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
+      <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6 w-full">
         <Skeleton className="h-32 w-full rounded-xl" />
         <Skeleton className="h-[500px] w-full rounded-xl" />
       </div>
@@ -95,23 +95,26 @@ export default function DashboardExample() {
 
       <div className="grid gap-4 md:grid-cols-3">
         {/* 2. Interactive Map (Takes up 2 columns) */}
-        <Card className="col-span-3 lg:col-span-2 flex flex-col">
+        <Card className="col-span-3 lg:col-span-2 flex flex-col min-h-[500px]">
           <CardHeader>
             <CardTitle>Live Incident Map</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 min-h-[500px]">
+          <CardContent className="flex-1 p-0 pb-6 px-6 relative h-[500px]">
             <IncidentMap incidents={incidents} />
           </CardContent>
         </Card>
 
-        {/* 3. Recent Incidents Feed (Takes up 1 column) */}
+        {/* 3. Active Incidents Feed (Takes up 1 column) */}
         <Card className="col-span-3 lg:col-span-1 flex flex-col">
           <CardHeader>
-            <CardTitle>Recent Dispatch Feed</CardTitle>
+            <CardTitle>Active Incidents</CardTitle>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto max-h-[500px]">
             <div className="space-y-4">
-              {incidents.slice(0, 10).map((incident: any) => (
+              {incidents
+                .filter((incident: any) => incident.status !== "resolved")
+                .slice(0, 10)
+                .map((incident: any) => (
                 <div key={incident._id} className="flex flex-col border-b pb-3 last:border-0 last:pb-0">
                   <div className="flex justify-between items-start mb-1">
                     <span className="font-semibold text-sm">{incident.type}</span>
@@ -125,6 +128,12 @@ export default function DashboardExample() {
                   </div>
                 </div>
               ))}
+              
+              {incidents.filter((incident: any) => incident.status !== "resolved").length === 0 && (
+                <div className="text-center text-muted-foreground text-sm py-8">
+                  No active incidents.
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

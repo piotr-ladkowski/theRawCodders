@@ -1,36 +1,22 @@
-
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet"
+import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet"
 import "leaflet/dist/leaflet.css"
-import L from "leaflet"
 import { Badge } from "@/components/ui/badge"
 
-// Fix for Leaflet's default marker icons in Vite/React
-const customMarker = new L.Icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-})
-
 export default function IncidentMap({ incidents }: { incidents: any[] }) {
-  // Center map around the Tatra Mountains (approx where we seeded data)
+  // Center map around the Tatra Mountains
   const mapCenter: [number, number] = [49.25, 19.98]
 
-  // Filter out resolved incidents so we only see active/standby ones on the map
+  // Filter out resolved incidents
   const activeIncidents = incidents?.filter((inc) => inc.status !== "resolved") || []
 
   return (
-    <div className="h-[500px] w-full rounded-xl overflow-hidden border">
+    <div className="h-full min-h-[500px] w-full rounded-xl overflow-hidden border">
       <MapContainer
         center={mapCenter}
         zoom={11}
         scrollWheelZoom={true}
-        style={{ height: "100%", width: "100%", zIndex: 0 }}
+        style={{ height: "100%", minHeight: "500px", width: "100%", zIndex: 0 }}
       >
-        {/* OpenStreetMap Base Layer */}
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -39,14 +25,23 @@ export default function IncidentMap({ incidents }: { incidents: any[] }) {
         {activeIncidents.map((incident) => {
           if (!incident.gpsCoordinates) return null;
 
+          // Make Active incidents RED, and Standby incidents ORANGE
+          const dotColor = incident.status === "active" ? "#ef4444" : "#f97316";
+
           return (
-            <Marker
+            <CircleMarker
               key={incident._id}
-              position={[
+              center={[
                 incident.gpsCoordinates.latitude,
                 incident.gpsCoordinates.longitude,
               ]}
-              icon={customMarker}
+              radius={8}
+              pathOptions={{ 
+                color: dotColor, 
+                fillColor: dotColor, 
+                fillOpacity: 0.8,
+                weight: 2 
+              }}
             >
               <Popup className="min-w-[200px]">
                 <div className="flex flex-col gap-2 p-1">
@@ -71,7 +66,7 @@ export default function IncidentMap({ incidents }: { incidents: any[] }) {
                   </div>
                 </div>
               </Popup>
-            </Marker>
+            </CircleMarker>
           )
         })}
       </MapContainer>

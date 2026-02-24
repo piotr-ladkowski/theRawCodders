@@ -15,9 +15,11 @@ export const listReturns = query({
     },
     handler: async (ctx, args) => {
         let returns = await ctx.db.query("returns").collect();
-
+        
         const offset = args.offset ?? 0;
         const limit = args.limit ?? 50;
+
+        if(limit === -1) return {data: returns, total: -1};
         
         let slicedReturns = returns;
         if (args.limit !== undefined) {
@@ -45,7 +47,7 @@ export const listReturns = query({
             })
         );
         
-        return enrichedReturns;
+        return { data: enrichedReturns, total: returns.length };
     },
 });
 

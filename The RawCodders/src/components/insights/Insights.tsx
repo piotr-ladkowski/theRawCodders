@@ -21,6 +21,7 @@ import {
   IconDownload,
 } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
+import { IconSpeakerphone } from "@tabler/icons-react"
 
 // Updated to use the environment variable we set up earlier
 const AI_SERVICE_URL = import.meta.env.VITE_AI_SERVICE_URL || "http://localhost:8000"

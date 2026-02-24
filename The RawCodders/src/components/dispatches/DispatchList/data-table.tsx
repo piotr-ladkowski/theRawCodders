@@ -1,10 +1,11 @@
+"use client"
+
 import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-
 import {
   Table,
   TableBody,
@@ -13,17 +14,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card"
-
 import { Button } from "@/components/ui/button"
-
-import { IconAddressBook, IconChevronLeft, IconChevronRight, IconDotsVertical } from "@tabler/icons-react"
-
+import { Badge } from "@/components/ui/badge"
+import { IconChevronLeft, IconChevronRight, IconDotsVertical } from "@tabler/icons-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,7 +27,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,14 +34,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useOrdersContext } from "./orders-context"
-import type { TOrder } from "./columns"
-
+import { useDispatchesContext } from "./dispatches-context"
+import type { TDispatch } from "./columns"
 import { api } from "../../../../convex/_generated/api"
-import { useMutation } from "convex/react"
+import { useMutation, useQuery } from "convex/react"
 import { Dispatch, SetStateAction, useState } from "react"
-
-import { useQuery } from "convex/react"
 import { 
   Select,
   SelectContent,
@@ -79,11 +68,13 @@ export function DataTable<TData, TValue>({
   data,
   pageSettings
 }: DataTableProps<TData, TValue>) {
-  const { setSelectedOrder, setEditOrderModalState } = useOrdersContext()
-  const deleteOrderMutation = useMutation(api.orders.deleteOrder)
+  const { setSelectedDispatch, setEditDispatchModalState } = useDispatchesContext()
+  // Note: if deleteDispatch is missing in your convex schema, implement it.
+  const deleteDispatchMutation = useMutation(api.dispatches?.deleteDispatch as any) 
 
-
-  const products = useQuery(api.products.listProducts, { offset: 0, limit: -1 });
+  const incidents = useQuery(api.incidents.listIncidents, { offset: 0, limit: -1 });
+  const personnel = useQuery(api.personnel.listPersonnel, { offset: 0, limit: -1 });
+  const equipment = useQuery(api.equipment.listEquipment, { offset: 0, limit: -1 });
 
   const table = useReactTable({
     data,
@@ -93,7 +84,7 @@ export function DataTable<TData, TValue>({
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  function ActionMenu({obj}: {obj: TOrder}) {
+  function ActionMenu({obj}: {obj: TDispatch}) {
     return (
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DropdownMenu>
@@ -104,9 +95,6 @@ export function DataTable<TData, TValue>({
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => { setSelectedOrder(obj); setEditOrderModalState(true);}}>
-                  Edit
-              </DropdownMenuItem>
               <DropdownMenuItem
                 className="hover:!bg-red-400"
                 onSelect={(event) => {
@@ -114,7 +102,7 @@ export function DataTable<TData, TValue>({
                   setIsDeleteDialogOpen(true)
                 }}
               >
-                Delete
+                Recall Dispatch (Delete)
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
@@ -123,17 +111,16 @@ export function DataTable<TData, TValue>({
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this order from our servers.
+              This will remove the dispatch record. (Note: Ensure personnel and equipment are manually marked as Available again).
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() =>{void deleteOrderMutation({ orderId: obj._id })}}>Continue</AlertDialogAction>
+            <AlertDialogAction onClick={() =>{void deleteDispatchMutation({ dispatchId: obj._id })}}>Continue</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     )
-
   }
 
   function PaginationControl({className}: {className?: string}) {
@@ -162,43 +149,29 @@ export function DataTable<TData, TValue>({
     )
   }
 
-
-  function RenderObject(object: any, accessorKey: string, Order: TOrder) {
-    const obj = object as Record<string, any>;
-
-    // Map Product ID to Product Name
-    if (accessorKey === "productId") {
-      const productId = object as string;
-      const product = products?.data?.find((p) => p._id === productId);
-      return <span>{product ? product.name : "Loading..."}</span>;
+  function RenderObject(object: any, accessorKey: string, dispatch: TDispatch) {
+    if (accessorKey === "incidentId") {
+      const inc = incidents?.data?.find((i: any) => i._id === object);
+      return <Badge variant="destructive">{inc ? inc.type : "Unknown"}</Badge>;
     }
-    
-    // Check if this is an address object
-    else if (accessorKey === "address") {
-      return (
-        <HoverCard openDelay={10} closeDelay={100}>
-          <HoverCardTrigger asChild>
-            <Button variant="ghost"><IconAddressBook /></Button>
-          </HoverCardTrigger>
-          <HoverCardContent side="left" className="w-48">
-            <div className="text-sm space-y-1">
-              <div>{obj.line1}</div>
-              <div>{obj.line2}</div>
-              <div>{obj.postCode}, {obj.city}</div>
-              <div>{obj.country}</div>
-            </div>
-          </HoverCardContent>
-        </HoverCard>
-      );
+    else if (accessorKey === "personnelId") {
+      if (!object) return <span className="text-muted-foreground">-</span>;
+      const person = personnel?.data?.find((p: any) => p._id === object);
+      return <span>{person ? person.name : "Unknown"}</span>;
+    }
+    else if (accessorKey === "equipmentId") {
+      if (!object) return <span className="text-muted-foreground">-</span>;
+      const eq = equipment?.data?.find((e: any) => e._id === object);
+      return <span>{eq ? eq.name : "Unknown"}</span>;
+    }
+    else if (accessorKey === "dispatchTime") {
+        return <span>{String(object).split("T").join(" ").split(".")[0]}</span>;
     }
     else if(accessorKey === "action")  {
-      return (
-       <ActionMenu obj={Order} />
-      )
+      return <ActionMenu obj={dispatch} />
     }
-    
+    return null;
   }
-
 
   return (
     <>
@@ -217,8 +190,6 @@ export function DataTable<TData, TValue>({
                 <SelectItem value="15">15</SelectItem>
                 <SelectItem value="30">30</SelectItem>
                 <SelectItem value="50">50</SelectItem>
-                <SelectItem value="70">70</SelectItem>
-                <SelectItem value="100">100</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -254,12 +225,10 @@ export function DataTable<TData, TValue>({
                 >
                   {row.getVisibleCells().map((cell) => {
                     const accessorKey = cell.column.id
-
                     return (
                       <TableCell key={cell.id}>
-                        {/* Added productId to the intercepted keys to route it through RenderObject */}
-                        {cell.getValue() !== null && (accessorKey === "action" || accessorKey === "address" || accessorKey === "productId")
-                          ?  RenderObject(cell.getValue(), accessorKey, row.original as TOrder)
+                        {(accessorKey === "action" || accessorKey === "incidentId" || accessorKey === "personnelId" || accessorKey === "equipmentId" || accessorKey === "dispatchTime")
+                          ?  RenderObject(cell.getValue(), accessorKey, row.original as TDispatch)
                           : flexRender(cell.column.columnDef.cell, cell.getContext()) 
                         }
                       </TableCell>
@@ -277,7 +246,6 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      
       <PaginationControl />
     </>
   )

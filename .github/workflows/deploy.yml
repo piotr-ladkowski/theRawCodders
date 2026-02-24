@@ -127,9 +127,9 @@ jobs:
           npx convex deploy --yes --url $CONVEX_SELF_HOSTED_URL --admin-key $CONVEX_SELF_HOSTED_ADMIN_KEY
 
           # ---- Seed Database ----
-          # Seeding disabled
-          # echo "Seeding database..."
-          # npx convex run seed:seed --url $CONVEX_SELF_HOSTED_URL --admin-key $CONVEX_SELF_HOSTED_ADMIN_KEY
+          echo "Seeding database..."
+          npx convex run seed:seed --url $CONVEX_SELF_HOSTED_URL --admin-key $CONVEX_SELF_HOSTED_ADMIN_KEY
+          '
 
           # Bring up the remaining frontend & dashboard services
           sudo docker compose --env-file .env.local up -d --build frontend dashboard

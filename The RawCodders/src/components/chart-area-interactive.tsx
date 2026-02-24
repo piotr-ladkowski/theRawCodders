@@ -32,19 +32,19 @@ import {
   ToggleGroupItem,
 } from "@/components/ui/toggle-group"
 
-export const description = "An interactive area chart for transaction revenue"
+export const description = "An interactive area chart for incident tracking"
 
 const chartConfig = {
-  revenue: { label: "Revenue" },
-  completed: { label: "Completed ($)", color: "var(--color-green-500)" },
-  pending: { label: "Pending ($)", color: "var(--accent)" },
+  incidents: { label: "Incidents" },
+  active: { label: "Active", color: "var(--color-red-500)" },
+  resolved: { label: "Resolved", color: "var(--color-green-500)" },
 } satisfies ChartConfig
 
-export function TransactionDashboard() {
+export function IncidentDashboard() {
   const isMobile = useIsMobile()
   const [timeRange, setTimeRange] = React.useState("90d")
 
-  const transactions = useQuery(api.transactions.listTransactions, { offset: 0 })
+  const incidents = useQuery(api.incidents.listIncidents, { offset: 0, limit: -1 })
 
   React.useEffect(() => {
     if (isMobile) {
@@ -53,34 +53,32 @@ export function TransactionDashboard() {
   }, [isMobile])
 
   const chartData = React.useMemo(() => {
-    if (!transactions) return []
+    if (!incidents) return []
 
-    const groupedData: Record<string, { date: string; completed: number; pending: number }> = {}
+    const groupedData: Record<string, { date: string; active: number; resolved: number }> = {}
 
-    transactions.transactions.forEach((tx) => {
-      // tx.date looks like "2024-06-15T14:30"
-      // We split by "T" and grab the first part ("2024-06-15") to group by day
-      const dateStr = tx.date ? tx.date.split("T")[0] : new Date().toISOString().split("T")[0];
+    incidents.data.forEach((incident) => {
+      const dateStr = incident.reportedDate ? incident.reportedDate.split("T")[0] : new Date().toISOString().split("T")[0]
 
       if (!groupedData[dateStr]) {
-        groupedData[dateStr] = { date: dateStr, completed: 0, pending: 0 }
+        groupedData[dateStr] = { date: dateStr, active: 0, resolved: 0 }
       }
 
-      if (tx.status === "completed") {
-        groupedData[dateStr].completed += tx.totalPrice
-      } else if (tx.status === "pending") {
-        groupedData[dateStr].pending += tx.totalPrice
+      if (incident.status === "active" || incident.status === "standby") {
+        groupedData[dateStr].active += 1
+      } else if (incident.status === "resolved") {
+        groupedData[dateStr].resolved += 1
       }
     })
 
     return Object.values(groupedData).sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     )
-  }, [transactions])
+  }, [incidents])
 
   const filteredData = chartData.filter((item) => {
     const date = new Date(item.date)
-    const referenceDate = new Date() 
+    const referenceDate = new Date()
     let daysToSubtract = 90
     if (timeRange === "30d") {
       daysToSubtract = 30
@@ -95,12 +93,12 @@ export function TransactionDashboard() {
   return (
     <Card className="@container/card">
       <CardHeader>
-        <CardTitle>Revenue Overview</CardTitle>
+        <CardTitle>Incidents Overview</CardTitle>
         <CardDescription>
           <span className="hidden @[540px]/card:block">
-            Completed vs Pending Revenue over time
+            Active vs Resolved incidents over time
           </span>
-          <span className="@[540px]/card:hidden">Revenue trends</span>
+          <span className="@[540px]/card:hidden">Incident trends</span>
         </CardDescription>
         <CardAction>
           <ToggleGroup
@@ -131,21 +129,21 @@ export function TransactionDashboard() {
         </CardAction>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        {!transactions ? (
+        {!incidents ? (
           <div className="h-[250px] flex items-center justify-center">
-            Loading transaction data...
+            Loading incident data...
           </div>
         ) : (
           <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
             <AreaChart data={filteredData}>
               <defs>
-                <linearGradient id="fillCompleted" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-completed)" stopOpacity={1.0} />
-                  <stop offset="95%" stopColor="var(--color-completed)" stopOpacity={0.1} />
+                <linearGradient id="fillActive" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--color-active)" stopOpacity={1.0} />
+                  <stop offset="95%" stopColor="var(--color-active)" stopOpacity={0.1} />
                 </linearGradient>
-                <linearGradient id="fillPending" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-pending)" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="var(--color-pending)" stopOpacity={0.1} />
+                <linearGradient id="fillResolved" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--color-resolved)" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="var(--color-resolved)" stopOpacity={0.1} />
                 </linearGradient>
               </defs>
               <CartesianGrid vertical={false} />
@@ -172,17 +170,17 @@ export function TransactionDashboard() {
                 }
               />
               <Area
-                dataKey="pending"
+                dataKey="resolved"
                 type="natural"
-                fill="url(#fillPending)"
-                stroke="var(--color-pending)"
+                fill="url(#fillResolved)"
+                stroke="var(--color-resolved)"
                 stackId="a"
               />
               <Area
-                dataKey="completed"
+                dataKey="active"
                 type="natural"
-                fill="url(#fillCompleted)"
-                stroke="var(--color-completed)"
+                fill="url(#fillActive)"
+                stroke="var(--color-active)"
                 stackId="a"
               />
             </AreaChart>

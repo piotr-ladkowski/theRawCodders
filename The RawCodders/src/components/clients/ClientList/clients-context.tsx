@@ -7,8 +7,6 @@ type ClientsContextValue = {
   setSelectedClient: Dispatch<SetStateAction<TClient | undefined>>;
   editClientModalState: boolean
   setEditClientModalState: Dispatch<SetStateAction<boolean>>
-  modalObserver: number,
-  setModalObserver: Dispatch<SetStateAction<number>>
 };
 
 const ClientsContext = createContext<ClientsContextValue | null>(null);

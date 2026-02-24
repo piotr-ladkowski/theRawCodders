@@ -159,10 +159,7 @@ export function DataTable<TData, TValue>({
   }
 
 
-  function RenderObject(object: object, accessorKey: string, equipment: TEquipment) {
-    const _obj = object as Record<string, any>;
-    void _obj;
-
+  function RenderObject(_object: object, accessorKey: string, equipment: TEquipment) {
     if(accessorKey === "action")  {
       return (
        <ActionMenu obj={equipment} />

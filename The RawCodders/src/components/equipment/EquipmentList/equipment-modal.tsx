@@ -68,23 +68,29 @@ export function EquipmentModal() {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
 
-    const commonData = {
-      name: (formData.get("name") as string) || (selectedEquipment?.name ?? ""),
-      category: category || (selectedEquipment?.category ?? ""),
-      status: status || (selectedEquipment?.status ?? "Available"),
-      image: (formData.get("image") as string) || (selectedEquipment?.image ?? ""),
-      lastInspected: (formData.get("lastInspected") as string) || (selectedEquipment?.lastInspected ?? new Date().toISOString().split("T")[0]),
-    };
+    const name = (formData.get("name") as string) || (selectedEquipment?.name ?? "");
+    const cat = category || (selectedEquipment?.category ?? "Vehicle");
+    const st = status || (selectedEquipment?.status ?? "Available");
+    const image = (formData.get("image") as string) || undefined;
+    const lastInspected = (formData.get("lastInspected") as string) || (selectedEquipment?.lastInspected ?? new Date().toISOString().split("T")[0]);
 
     try {
       if (selectedEquipment?._id) {
         await updateEquipment({
           equipmentId: selectedEquipment._id,
-          equipment: commonData
+          name,
+          category: cat,
+          status: st as "Available" | "In Use" | "Maintenance" | "Retired",
+          image,
+          lastInspected,
         });
       } else {
         await createEquipment({
-          equipment: commonData,
+          name,
+          category: cat,
+          status: st as "Available" | "In Use" | "Maintenance" | "Retired",
+          image,
+          lastInspected,
         });
       }
       await new Promise(resolve => setTimeout(resolve, 500));

@@ -27,7 +27,7 @@ export default defineSchema({
   })
   .index("by_name", ["name"]),
 
-  clients: defineTable({
+clients: defineTable({
     name: v.string(),
     email: v.string(),
     phone: v.string(),
@@ -39,7 +39,8 @@ export default defineSchema({
       postCode: v.string(),
       city: v.string(),
       country: v.string(),
-    })
+    }),
+    aiSummary: v.optional(v.string()), 
   }).index("by_email", ["email"])
     .index("by_name", ["name"]),
 

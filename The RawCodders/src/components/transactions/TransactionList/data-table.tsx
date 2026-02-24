@@ -195,32 +195,31 @@ export function DataTable<TData, TValue>({
 
 
 
-
   return (
     <>
       <div className="flex items-center !justify-between gap-2 my-4">
-              <div className="flex flex-row items-center gap-2">
-                <Label className="mb-0">Items per page:</Label>
-                <Select
-                  value={String(pageSettings.docCount)}
-                  onValueChange={(value) => {pageSettings.setDocCount(Number(value)); pageSettings.setCurrentPage(1)}}
-                >
-                  <SelectTrigger className="w-[80px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup >
-                      <SelectItem value="15">15</SelectItem>
-                      <SelectItem value="30">30</SelectItem>
-                      <SelectItem value="50">50</SelectItem>
-                      <SelectItem value="70">70</SelectItem>
-                      <SelectItem value="100">100</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
-              <PaginationControl className="flex flex-row justify-end" />
-            </div>
+          <div className="flex flex-row items-center gap-2">
+            <Label className="mb-0">Items per page:</Label>
+            <Select
+              value={String(pageSettings.docCount)}
+              onValueChange={(value) => {pageSettings.setDocCount(Number(value)); pageSettings.setCurrentPage(1)}}
+            >
+              <SelectTrigger className="w-[80px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="15">15</SelectItem>
+                  <SelectItem value="30">30</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="70">70</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <PaginationControl className="flex flex-row justify-end" />
+        </div>
       <div className="overflow-hidden text-center rounded-md bTransaction">
         <Table>
           <TableHeader>

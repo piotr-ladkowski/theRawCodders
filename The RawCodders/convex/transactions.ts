@@ -43,7 +43,8 @@ export const listTransactions = query({
     },
     handler: async (ctx, args) => {
         let transactions = await ctx.db.query("transactions").collect();
-        
+        const transactionCount = transactions.length;
+
         const offset = args.offset ?? 0;
         if (args.limit !== undefined) {
             transactions = transactions.slice(offset, offset + args.limit);
@@ -61,7 +62,7 @@ export const listTransactions = query({
                 };
             })
         ),
-        count: transactions.length
+        count: transactionCount
     };
     },
 });

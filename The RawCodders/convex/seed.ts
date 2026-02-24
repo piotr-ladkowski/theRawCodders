@@ -60,29 +60,31 @@ const WEATHER = [
   "Foggy, 0C",
 ] as const;
 
-const ISSUE_TYPES = [
-  "Battery Failure",
-  "Engine Malfunction",
-  "Structural Damage",
-  "Calibration Drift",
-  "Wear and Tear",
-  "Software Error",
-  "Hydraulic Leak",
-] as const;
-
-const MAINTENANCE_DESCRIPTIONS = [
-  "Battery pack depleted below safe threshold after extended cold-weather operation.",
-  "Engine stalling intermittently during high-altitude runs; needs carburetor inspection.",
-  "Frame cracked after impact during last rescue mission; requires welding.",
-  "GPS module showing 15m drift; recalibration and firmware update needed.",
-  "Rope abrasion detected near carabiner attachment point; replacement scheduled.",
-  "On-board diagnostics software crash on startup; reinstallation required.",
-  "Hydraulic fluid leak found at main lift cylinder seal.",
-  "Radio antenna connector corroded; signal intermittent in bad weather.",
-  "Stretcher locking mechanism jammed; pivot bolt replacement needed.",
-  "Drone propeller blade chipped after landing in rocky terrain.",
-  "Defibrillator self-test failed; electrode pads expired and need replacement.",
-  "Snowmobile track tension out of spec; adjustment and track inspection required.",
+// eqIndex is a direct index into the eqIds array (0-29).
+// Equipment type is EQ_NAMES[eqIndex % 7]:
+//   0=Defibrillator AED, 1=Skidoo Snowmobile, 2=Rescue Helicopter Sokół,
+//   3=Avalanche Probe, 4=Thermal Drone, 5=Stretcher, 6=VHF Radio
+const MAINTENANCE_LOG_ENTRIES = [
+  { eqIndex: 0, issueType: "Battery Failure", description: "Battery pack depleted below safe threshold after extended cold-weather operation." },
+  { eqIndex: 1, issueType: "Engine Malfunction", description: "Engine stalling intermittently during high-altitude runs; needs carburetor inspection." },
+  { eqIndex: 2, issueType: "Structural Damage", description: "Tail rotor vibration detected during post-flight inspection; requires immediate servicing." },
+  { eqIndex: 3, issueType: "Calibration Drift", description: "Probe depth markings misaligned after repeated use in icy conditions; recalibration required." },
+  { eqIndex: 4, issueType: "Wear and Tear", description: "Drone propeller blade chipped after landing in rocky terrain." },
+  { eqIndex: 5, issueType: "Structural Damage", description: "Stretcher locking mechanism jammed; pivot bolt replacement needed." },
+  { eqIndex: 6, issueType: "Wear and Tear", description: "Radio antenna connector corroded; signal intermittent in bad weather." },
+  { eqIndex: 7, issueType: "Software Error", description: "Defibrillator self-test failed; electrode pads expired and need replacement." },
+  { eqIndex: 8, issueType: "Wear and Tear", description: "Snowmobile track tension out of spec; adjustment and track inspection required." },
+  { eqIndex: 9, issueType: "Hydraulic Leak", description: "Hydraulic fluid leak found at main lift cylinder seal on helicopter." },
+  { eqIndex: 10, issueType: "Structural Damage", description: "Avalanche probe tip bent after striking submerged rock; replacement needed." },
+  { eqIndex: 11, issueType: "Software Error", description: "Drone GPS firmware crash during flight; emergency landing triggered." },
+  { eqIndex: 12, issueType: "Wear and Tear", description: "Stretcher fabric worn thin at load-bearing points; re-stitching required." },
+  { eqIndex: 13, issueType: "Battery Failure", description: "VHF radio battery failing to hold charge; replacement cell ordered." },
+  { eqIndex: 14, issueType: "Battery Failure", description: "Defibrillator battery capacity degraded below 60%; replacement scheduled." },
+  { eqIndex: 15, issueType: "Engine Malfunction", description: "Snowmobile starter motor engaging inconsistently in sub-zero temperatures." },
+  { eqIndex: 16, issueType: "Structural Damage", description: "Helicopter windshield micro-cracks found during routine inspection." },
+  { eqIndex: 17, issueType: "Calibration Drift", description: "Avalanche probe length markings faded; needs re-marking and validation." },
+  { eqIndex: 18, issueType: "Software Error", description: "Thermal drone camera feed dropping intermittently; firmware update required." },
+  { eqIndex: 19, issueType: "Structural Damage", description: "Stretcher wheel axle bent after rough terrain transport; needs replacement." },
 ] as const;
 
 function randomInt(min: number, max: number) {
@@ -273,12 +275,13 @@ export const seed = mutation({
       const threeMonthsAgo = new Date();
       threeMonthsAgo.setMonth(now.getMonth() - 3);
 
-      for (let i = 0; i < 20; i++) {
-        const equipmentId = eqIds[i % eqIds.length];
+      for (let i = 0; i < MAINTENANCE_LOG_ENTRIES.length; i++) {
+        const entry = MAINTENANCE_LOG_ENTRIES[i];
+        const equipmentId = eqIds[entry.eqIndex];
         await ctx.db.insert("maintenance_logs", {
           equipmentId,
-          issueType: ISSUE_TYPES[i % ISSUE_TYPES.length],
-          description: MAINTENANCE_DESCRIPTIONS[i % MAINTENANCE_DESCRIPTIONS.length],
+          issueType: entry.issueType,
+          description: entry.description,
           logDate: randomDate(threeMonthsAgo, now),
         });
         createdMaintenanceLogs++;

@@ -44,13 +44,13 @@ export default function Insights() {
       const res = await fetch(`${AI_SERVICE_URL}/insights`)
       if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`)
       const json = await res.json()
-      
+
       // 2. Save it directly into the Convex database
       await saveInsight({
         executive_summary: json.executive_summary,
         key_findings: json.key_findings,
         recommendations: json.recommendations,
-        marketing_actions: json.marketing_actions,
+        marketing_actions: json.marketing_actions ?? [],
         raw_metrics: json.raw_metrics,
       })
     } catch (err) {
@@ -73,12 +73,13 @@ export default function Insights() {
           executive_summary: latestInsight.executive_summary,
           key_findings: latestInsight.key_findings,
           recommendations: latestInsight.recommendations,
+          marketing_actions: latestInsight.marketing_actions ?? [],
           raw_metrics: latestInsight.raw_metrics,
         }),
       })
-      
+
       if (!res.ok) throw new Error("Failed to generate PDF")
-      
+
       const blob = await res.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement("a")
@@ -106,7 +107,7 @@ export default function Insights() {
     <div className="flex flex-1 flex-col">
       <div className="@container/main flex flex-1 flex-col gap-2">
         <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6">
-          
+
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -121,7 +122,7 @@ export default function Insights() {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button 
+              <Button
                 variant="outline"
                 onClick={downloadReport}
                 disabled={!latestInsight || isDownloading || isGenerating}
@@ -129,8 +130,8 @@ export default function Insights() {
                 <IconDownload className={`mr-2 h-4 w-4 ${isDownloading ? "animate-pulse" : ""}`} />
                 {isDownloading ? "Generating PDF..." : "Download Report"}
               </Button>
-              <Button 
-                onClick={generateInsights} 
+              <Button
+                onClick={generateInsights}
                 disabled={isGenerating}
               >
                 <IconRefresh className={`mr-2 h-4 w-4 ${isGenerating ? "animate-spin" : ""}`} />
@@ -161,9 +162,9 @@ export default function Insights() {
           {latestInsight && (
             <div className={isGenerating ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
               <div className="flex justify-between items-center mb-4">
-                 <p className="text-xs text-muted-foreground">
-                   Last generated: {new Date(latestInsight._creationTime).toLocaleString()}
-                 </p>
+                <p className="text-xs text-muted-foreground">
+                  Last generated: {new Date(latestInsight._creationTime).toLocaleString()}
+                </p>
               </div>
 
               <Card className="mb-6">
@@ -179,12 +180,12 @@ export default function Insights() {
 
               {/* Metric Cards */}
               <div className="mb-6">
-                 <MetricCards metrics={latestInsight.raw_metrics} />
+                <MetricCards metrics={latestInsight.raw_metrics} />
               </div>
 
               {/* Key Findings */}
               <div className="mb-6">
-                 <KeyFindings findings={latestInsight.key_findings} />
+                <KeyFindings findings={latestInsight.key_findings} />
               </div>
 
               {/* Recommendations */}
@@ -254,7 +255,7 @@ export default function Insights() {
 }
 
 function MetricCards({ metrics }: { metrics: any }) {
-  const {demographics, transactions, returns } = metrics || {}
+  const { demographics, transactions, returns } = metrics || {}
 
   const cards = [
     {

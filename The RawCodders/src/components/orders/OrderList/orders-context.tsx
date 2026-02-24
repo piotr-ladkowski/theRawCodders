@@ -7,7 +7,7 @@ type OrdersContextValue = {
   setSelectedOrder: Dispatch<SetStateAction<TOrder | undefined>>;
   editOrderModalState: boolean
   setEditOrderModalState: Dispatch<SetStateAction<boolean>>
-  modalObserver: number,
+  modalObserver: number
   setModalObserver: Dispatch<SetStateAction<number>>
 };
 

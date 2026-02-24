@@ -6,7 +6,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Field, FieldGroup } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -16,7 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { IconPlus, IconChevronDown, IconCheck } from "@tabler/icons-react";
+import { IconChevronDown, IconCheck } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react"
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";

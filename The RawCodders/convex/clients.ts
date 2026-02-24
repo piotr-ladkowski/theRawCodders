@@ -12,10 +12,10 @@ export const listClients = query({
         const offset = args.offset ?? 0;
         const limit = args.limit ?? 50;
         if (args.limit !== undefined) {
-            return clients.slice(offset, offset + args.limit);
+            return {data: clients.slice(offset, offset + args.limit), count: clients.length}
         }
         
-        return clients.slice(offset);
+        return {data: clients.slice(offset), count: clients.length};
     },
 });
 

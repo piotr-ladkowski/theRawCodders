@@ -23,7 +23,7 @@ import { api } from "../../../../convex/_generated/api";
 import { useClientsContext } from "./clients-context";
 
 export function ClientModal() {
-  const { selectedClient, setSelectedClient, editClientModalState, setEditClientModalState } = useClientsContext();
+  const { selectedClient, setSelectedClient, editClientModalState, setEditClientModalState, setModalObserver } = useClientsContext();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const clearSelectedTimeoutRef = useRef<number | null>(null);
   const [gender, setGender] = useState<"male" | "female" | "other">("male");
@@ -84,6 +84,8 @@ export function ClientModal() {
           sex: gender ?? "other", 
         });
       }
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setModalObserver((prev) => (prev + 1) % 1000);
       setEditClientModalState(false); // Close the modal on success
       scheduleClearSelectedClient();
     } catch (error) {

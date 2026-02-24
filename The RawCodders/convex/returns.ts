@@ -19,7 +19,7 @@ export const listReturns = query({
         const offset = args.offset ?? 0;
         const limit = args.limit ?? 50;
 
-        if(limit === -1) return {data: returns, total: -1};
+        if(limit === -1) return {data: returns, total: returns.length};
         
         let slicedReturns = returns;
         if (args.limit !== undefined) {

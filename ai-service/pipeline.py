@@ -1,11 +1,33 @@
 import json
 import logging
+import httpx
 from openai import AsyncOpenAI
 from config import settings
 from models import AnalysisResult, MetricData
 
 logger = logging.getLogger(__name__)
+
+# FIXED: Must be exactly lowercase as defined in config.py
 client = AsyncOpenAI(api_key=settings.openai_api_key)
+
+
+# ADDED: This function was missing! It fetches the data from Convex and passes it to the AI.
+async def run_pipeline() -> dict:
+    logger.info("Fetching operational data from Convex...")
+    
+    # Convex HTTP routes use .site instead of .cloud
+    http_url = settings.convex_url.replace(".cloud", ".site")
+    
+    async with httpx.AsyncClient() as http_client:
+        response = await http_client.get(f"{http_url}/api/export")
+        response.raise_for_status()
+        data = response.json()
+        
+    insights = await generate_insights(data)
+    
+    # Return a dict so main.py can pass it cleanly back to the client
+    return insights.model_dump()
+
 
 async def generate_insights(data: dict) -> AnalysisResult:
     logger.info("Calculating Tactical Metrics...")
@@ -80,6 +102,7 @@ async def generate_insights(data: dict) -> AnalysisResult:
         logger.error(f"Failed to generate insights: {e}")
         raise e
     
+
 async def generate_personnel_summary(personnel_data: dict) -> str:
     logger.info(f"Generating tactical summary for personnel: {personnel_data.get('name')}")
     

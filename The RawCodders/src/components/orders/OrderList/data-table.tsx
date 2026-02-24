@@ -148,7 +148,7 @@ export function DataTable<TData, TValue>({
           <IconChevronLeft />
         </Button>
         <div>
-          {`${pageSettings.currentPage} / ${Math.max(Math.floor(pageSettings.tableSize/pageSettings.docCount) + Number(!!(pageSettings.tableSize%pageSettings.docCount)), 1)}}`}
+          {`${pageSettings.currentPage} / ${Math.max(Math.floor(pageSettings.tableSize/pageSettings.docCount) + Number(!!(pageSettings.tableSize%pageSettings.docCount)), 1)}`}
         </div>
         <Button
           variant="outline"

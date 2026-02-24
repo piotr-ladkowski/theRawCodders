@@ -1,11 +1,14 @@
 import { useQuery, useConvex } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { columns } from "@/components/maintenance/MaintenanceLogList/columns"
-import { DataTable } from "@/components/maintenance/MaintenanceLogList/data-table"
-import { MaintenanceModal } from "./MaintenanceLogList/maintenance-modal";
+
+// Fixed spelling to match your "maintaince" folders
+import { columns } from "@/components/maintaince/MaintainceLogList/columns"
+import { DataTable } from "@/components/maintaince/MaintainceLogList/data-table"
+import { MaintenanceModal } from "./MaintainceLogList/maintaince-modal";
 import { useState, useEffect } from "react";
-import { TMaintenanceLog } from "./MaintenanceLogList/columns";
-import { MaintenanceProvider } from "./MaintenanceLogList/maintenance-context";
+import { TMaintenanceLog } from "./MaintainceLogList/columns";
+import { MaintenanceProvider } from "./MaintainceLogList/maintaince-context";
+
 import { Spinner } from "../ui/spinner";
 
 export default function MaintenanceLogs() {

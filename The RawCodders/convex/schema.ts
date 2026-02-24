@@ -80,6 +80,7 @@ export default defineSchema({
     executive_summary: v.string(),
     key_findings: v.any(),
     recommendations: v.array(v.string()),
+    marketing_actions: v.optional(v.array(v.string())),
     raw_metrics: v.any(),
   }),
 

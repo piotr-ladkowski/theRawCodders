@@ -23,6 +23,12 @@ Produce a structured report with:
    Product Performance, Transaction Patterns, Returns Analysis). Each finding should
    reference the specific numbers from the data.
 3. **Actionable Recommendations** — concrete, prioritized steps the business should take.
+4. **Marketing Actions** — 5-8 specific, creative marketing campaign ideas based on the data.
+   For each action include: a catchy campaign name, the target audience segment,
+   the channel (email, social media, in-app, SMS, etc.), expected impact, and a brief
+   description of the campaign. Base these on actual patterns in the data — e.g. if a
+   demographic spends more, target them; if certain products are often co-purchased,
+   create bundles; if there's a peak day/hour, time promotions accordingly.
 
 Be data-driven. Cite numbers. Flag any statistically significant results.
 Keep the tone professional but accessible."""
@@ -83,6 +89,7 @@ async def run_pipeline() -> dict:
         "executive_summary": sections.get("executive_summary", narrative),
         "key_findings": sections.get("key_findings", {}),
         "recommendations": sections.get("recommendations", []),
+        "marketing_actions": sections.get("marketing_actions", []),
         "raw_metrics": raw_metrics,
     }
 
@@ -99,13 +106,15 @@ def _parse_narrative(text: str) -> dict:
         "key findings": "key_findings",
         "actionable recommendations": "recommendations",
         "recommendations": "recommendations",
+        "marketing actions": "marketing_actions",
+        "marketing campaigns": "marketing_actions",
     }
 
     def flush():
         nonlocal current_section, current_content
         if current_section and current_content:
             content = "\n".join(current_content).strip()
-            if current_section == "recommendations":
+            if current_section in ("recommendations", "marketing_actions"):
                 # Split into list items
                 items = [
                     line.lstrip("0123456789.-) ").strip()

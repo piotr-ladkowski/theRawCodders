@@ -21,6 +21,7 @@ import {
   IconDownload,
 } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
+import { IconSpeakerphone } from "@tabler/icons-react"
 
 // Updated to use the environment variable we set up earlier
 const AI_SERVICE_URL = import.meta.env.VITE_AI_SERVICE_URL || "http://localhost:8000"
@@ -49,6 +50,7 @@ export default function Insights() {
         executive_summary: json.executive_summary,
         key_findings: json.key_findings,
         recommendations: json.recommendations,
+        marketing_actions: json.marketing_actions,
         raw_metrics: json.raw_metrics,
       })
     } catch (err) {
@@ -206,6 +208,42 @@ export default function Insights() {
                   </ol>
                 </CardContent>
               </Card>
+
+              {/* Marketing Actions */}
+              {latestInsight.marketing_actions && latestInsight.marketing_actions.length > 0 && (
+                <Card className={'mt-6'}>
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <IconSpeakerphone className="h-5 w-5 text-primary" />
+                      <div>
+                        <CardTitle>Marketing Actions</CardTitle>
+                        <CardDescription>
+                          AI-proposed campaign ideas based on your data patterns
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {latestInsight.marketing_actions.map((action: string, i: number) => (
+                        <div
+                          key={i}
+                          className="rounded-lg border p-4 space-y-1"
+                        >
+                          <div className="flex items-start gap-2">
+                            <Badge variant="secondary" className="shrink-0 mt-0.5">
+                              {i + 1}
+                            </Badge>
+                            <p className="text-sm leading-relaxed text-muted-foreground">
+                              {renderInlineBold(action)}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
 

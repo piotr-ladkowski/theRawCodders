@@ -1,10 +1,11 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useQuery } from "convex/react"
 import { api } from "../../../convex/_generated/api"
 import { Id } from "../../../convex/_generated/dataModel"
-import { IconArrowLeft, IconCash, IconStar, IconTruckReturn } from "@tabler/icons-react"
+import { IconArrowLeft, IconCash, IconStar, IconTruckReturn, IconSparkles } from "@tabler/icons-react"
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 
 import { Button } from "@/components/ui/button"
@@ -24,6 +25,8 @@ import {
 } from "@/components/ui/chart"
 import { Spinner } from "@/components/ui/spinner"
 
+const AI_SERVICE_URL = import.meta.env.VITE_AI_SERVICE_URL || "http://localhost:8000"
+
 const chartConfig = {
   amount: { label: "Spending ($)", color: "oklch(50.69% .1387 329.4)" },
 } satisfies ChartConfig
@@ -40,6 +43,43 @@ export default function ClientDetail() {
     api.clients.getClientDetailStats,
     clientId ? { clientId: clientId as Id<"clients"> } : "skip"
   )
+
+  const [summary, setSummary] = useState<string | null>(null)
+  const [summaryLoading, setSummaryLoading] = useState(false)
+  const [summaryError, setSummaryError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!client || !stats) return
+
+    const fetchSummary = async () => {
+      setSummaryLoading(true)
+      setSummaryError(null)
+      try {
+        const response = await fetch(`${AI_SERVICE_URL}/client-summary`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: client.name,
+            totalSpending: stats.totalSpending,
+            totalOrders: stats.totalOrders,
+            totalReturns: stats.totalReturns,
+            returnRate: stats.returnRate,
+            averageRating: stats.averageRating,
+            totalRatings: stats.totalRatings,
+          }),
+        })
+        if (!response.ok) throw new Error("Failed to generate summary")
+        const data = await response.json()
+        setSummary(data.summary)
+      } catch {
+        setSummaryError("Unable to generate AI summary")
+      } finally {
+        setSummaryLoading(false)
+      }
+    }
+
+    fetchSummary()
+  }, [client, stats])
 
   if (client === undefined || stats === undefined) {
     return (
@@ -203,6 +243,33 @@ export default function ClientDetail() {
                     </AreaChart>
                   </ChartContainer>
                 )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* AI Client Summary */}
+          <div className="px-4 lg:px-6">
+            <Card className="@container/card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <IconSparkles className="size-5 text-purple-500" />
+                  AI Client Summary
+                </CardTitle>
+                <CardDescription>
+                  AI-generated overview of this client's activity
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {summaryLoading ? (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Spinner className="size-4" />
+                    Generating summary…
+                  </div>
+                ) : summaryError ? (
+                  <p className="text-sm text-muted-foreground">{summaryError}</p>
+                ) : summary ? (
+                  <p className="text-sm leading-relaxed">{summary}</p>
+                ) : null}
               </CardContent>
             </Card>
           </div>

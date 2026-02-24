@@ -94,6 +94,35 @@ async def run_pipeline() -> dict:
     }
 
 
+CLIENT_SUMMARY_PROMPT = """You are a senior business analyst for an e-commerce platform.
+You will receive JSON data containing a specific client's statistics including their
+spending, order count, return rate, and average review rating.
+
+Produce exactly 3 sentences summarizing this client's profile:
+1. First sentence about their spending behavior.
+2. Second sentence about their review/rating activity.
+3. Third sentence about their cancellation/return rate.
+
+Be concise, data-driven, and professional. Reference the specific numbers provided."""
+
+
+async def generate_client_summary(client_data: dict) -> str:
+    """Generate a 3-sentence AI summary for a single client."""
+    client = AsyncOpenAI(api_key=settings.openai_api_key)
+    response = await client.chat.completions.create(
+        model="gpt-4o",
+        temperature=0.3,
+        messages=[
+            {"role": "system", "content": CLIENT_SUMMARY_PROMPT},
+            {
+                "role": "user",
+                "content": f"Here is the client data:\n\n```json\n{json.dumps(client_data, indent=2)}\n```",
+            },
+        ],
+    )
+    return response.choices[0].message.content.strip()
+
+
 def _parse_narrative(text: str) -> dict:
     """Best-effort parse of the LLM narrative into structured sections."""
     result: dict[str, Any] = {}

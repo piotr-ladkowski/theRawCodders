@@ -13,11 +13,11 @@ import type * as clients from "../clients.js";
 import type * as http from "../http.js";
 import type * as insights from "../insights.js";
 import type * as myFunctions from "../myFunctions.js";
-import type * as orders from "../orders.js";
-import type * as products from "../products.js";
-import type * as returns from "../returns.js";
+import type * as orders from "../dispatches.js";
+import type * as products from "../equipment.js";
+import type * as returns from "../maintenance_logs.js";
 import type * as seed from "../seed.js";
-import type * as transactions from "../transactions.js";
+import type * as transactions from "../incidents.js";
 
 import type {
   ApiFromModules,

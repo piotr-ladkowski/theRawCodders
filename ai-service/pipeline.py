@@ -104,7 +104,8 @@ Produce exactly 3 sentences summarizing this client's profile:
 3. Third sentence about their cancellation/return rate.
 
 Be concise, data-driven, and professional. Reference the specific numbers provided.
-We want to know if they are a high-value customer, if they are satisfied or dissatisfied based on reviews, and if they are a risk for returns/cancellations."""
+We want to know if they are a high-value customer, if they are satisfied or dissatisfied based on reviews, and if they are a risk for returns/cancellations. If there is there is no data about
+certain point, you can skip a sentance, for instance if there is no reviews you can not write about them"""
 
 
 async def generate_client_summary(client_data: dict) -> str:

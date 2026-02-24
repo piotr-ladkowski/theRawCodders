@@ -15,6 +15,7 @@ import type * as http from "../http.js";
 import type * as incidents from "../incidents.js";
 import type * as insights from "../insights.js";
 import type * as maintenance_logs from "../maintenance_logs.js";
+import type * as mission_reports from "../mission_reports.js";
 import type * as myFunctions from "../myFunctions.js";
 import type * as personnel from "../personnel.js";
 import type * as seed from "../seed.js";
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   incidents: typeof incidents;
   insights: typeof insights;
   maintenance_logs: typeof maintenance_logs;
+  mission_reports: typeof mission_reports;
   myFunctions: typeof myFunctions;
   personnel: typeof personnel;
   seed: typeof seed;

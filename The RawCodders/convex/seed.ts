@@ -103,6 +103,157 @@ const MISSION_REPORT_NOTES = [
   "Minor communication issues at first, resolved after radio channel switch.",
 ] as const;
 
+const ACTIVE_INCIDENT_COUNT = 2; // change to 1 if you want exactly one active incident
+
+const INCIDENT_TEMPLATES: Array<{
+  type: "Avalanche" | "Missing Person" | "Medical Emergency" | "Fall / Injury" | "Other";
+  severityLevel: number;
+  weatherConditions: string;
+  gpsCoordinates: { latitude: number; longitude: number };
+  notesHint?: string;
+}> = [
+  {
+    type: "Missing Person",
+    severityLevel: 4,
+    weatherConditions: "Foggy, 0C",
+    gpsCoordinates: { latitude: 49.2501, longitude: 19.9342 }, // okolice Kasprowy
+    notesHint: "Hiker overdue after planned descent from Kasprowy Wierch.",
+  },
+  {
+    type: "Medical Emergency",
+    severityLevel: 5,
+    weatherConditions: "Clear, -3C",
+    gpsCoordinates: { latitude: 49.2326, longitude: 20.0083 }, // okolice Morskie Oko
+    notesHint: "Chest pain and collapse reported on trail near Morskie Oko.",
+  },
+  {
+    type: "Fall / Injury",
+    severityLevel: 4,
+    weatherConditions: "High Winds, -8C",
+    gpsCoordinates: { latitude: 49.2248, longitude: 19.9819 },
+    notesHint: "Suspected ankle fracture after slip on icy section.",
+  },
+  {
+    type: "Avalanche",
+    severityLevel: 5,
+    weatherConditions: "Heavy Snow, Low Visibility",
+    gpsCoordinates: { latitude: 49.2167, longitude: 20.0402 },
+    notesHint: "Small avalanche reported; one possible burial.",
+  },
+  {
+    type: "Medical Emergency",
+    severityLevel: 3,
+    weatherConditions: "Sunny, 2C",
+    gpsCoordinates: { latitude: 49.2681, longitude: 19.9812 },
+    notesHint: "Exhaustion and dehydration on ascent route.",
+  },
+  {
+    type: "Missing Person",
+    severityLevel: 3,
+    weatherConditions: "Clear, -6C",
+    gpsCoordinates: { latitude: 49.2562, longitude: 19.9007 },
+    notesHint: "Skier not returned before dusk.",
+  },
+  {
+    type: "Fall / Injury",
+    severityLevel: 2,
+    weatherConditions: "Clear, -1C",
+    gpsCoordinates: { latitude: 49.2417, longitude: 19.9958 },
+    notesHint: "Minor fall with wrist pain near marked trail.",
+  },
+  {
+    type: "Other",
+    severityLevel: 2,
+    weatherConditions: "Foggy, 1C",
+    gpsCoordinates: { latitude: 49.2304, longitude: 19.9614 },
+    notesHint: "False alarm / distress signal verification.",
+  },
+  {
+    type: "Medical Emergency",
+    severityLevel: 4,
+    weatherConditions: "High Winds, -10C",
+    gpsCoordinates: { latitude: 49.2489, longitude: 20.0215 },
+    notesHint: "Hypothermia symptoms in exposed terrain.",
+  },
+  {
+    type: "Missing Person",
+    severityLevel: 3,
+    weatherConditions: "Foggy, -2C",
+    gpsCoordinates: { latitude: 49.2145, longitude: 19.9533 },
+    notesHint: "Lost trail in low visibility after sunset.",
+  },
+  {
+    type: "Fall / Injury",
+    severityLevel: 3,
+    weatherConditions: "Clear, 1C",
+    gpsCoordinates: { latitude: 49.2614, longitude: 19.9448 },
+    notesHint: "Knee injury during descent; unable to continue.",
+  },
+  {
+    type: "Medical Emergency",
+    severityLevel: 2,
+    weatherConditions: "Sunny, 4C",
+    gpsCoordinates: { latitude: 49.2369, longitude: 20.0141 },
+    notesHint: "Mild altitude-related symptoms and weakness.",
+  },
+  {
+    type: "Other",
+    severityLevel: 1,
+    weatherConditions: "Clear, 0C",
+    gpsCoordinates: { latitude: 49.2277, longitude: 19.9752 },
+    notesHint: "Tourist group requested navigation assistance.",
+  },
+  {
+    type: "Avalanche",
+    severityLevel: 4,
+    weatherConditions: "Heavy Snow, Low Visibility",
+    gpsCoordinates: { latitude: 49.2201, longitude: 20.0268 },
+    notesHint: "Avalanche debris across route; area assessment required.",
+  },
+  {
+    type: "Fall / Injury",
+    severityLevel: 5,
+    weatherConditions: "High Winds, -12C",
+    gpsCoordinates: { latitude: 49.2438, longitude: 19.9897 },
+    notesHint: "Serious fall in steep terrain, possible spinal injury.",
+  },
+  {
+    type: "Medical Emergency",
+    severityLevel: 3,
+    weatherConditions: "Foggy, -1C",
+    gpsCoordinates: { latitude: 49.2524, longitude: 19.9726 },
+    notesHint: "Asthma exacerbation reported during hike.",
+  },
+  {
+    type: "Missing Person",
+    severityLevel: 2,
+    weatherConditions: "Clear, -4C",
+    gpsCoordinates: { latitude: 49.2387, longitude: 19.9289 },
+    notesHint: "Delayed return; phone battery dead, likely route deviation.",
+  },
+  {
+    type: "Other",
+    severityLevel: 2,
+    weatherConditions: "Sunny, 3C",
+    gpsCoordinates: { latitude: 49.2455, longitude: 20.0036 },
+    notesHint: "Equipment recovery support requested by trail crew.",
+  },
+  {
+    type: "Fall / Injury",
+    severityLevel: 3,
+    weatherConditions: "Clear, -2C",
+    gpsCoordinates: { lat itude: 49.2199, longitude: 19.9474 },
+    notesHint: "Shoulder dislocation after slip on snow patch.",
+  },
+  {
+    type: "Medical Emergency",
+    severityLevel: 4,
+    weatherConditions: "High Winds, -7C",
+    gpsCoordinates: { latitude: 49.2333, longitude: 19.9911 },
+    notesHint: "Severe allergic reaction reported at shelter approach.",
+  },
+];
+
 // -----------------------------
 // Helpers
 // -----------------------------
@@ -129,6 +280,12 @@ function monthsAgo(n: number): Date {
 
 function randomRecentDate(monthsBack: number): string {
   return randomDate(monthsAgo(monthsBack), new Date());
+}
+
+function daysAgo(n: number): Date {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d;
 }
 
 function uniqueRandomItems<T>(arr: readonly T[], count: number): T[] {
@@ -262,8 +419,7 @@ async function ensureEquipment(ctx: any, targetTotal: number) {
 async function seedIncidentsAndDispatchesIfEmpty(
   ctx: any,
   personnelIds: any[],
-  equipmentIds: any[],
-  targetIncidents = 50
+  equipmentIds: any[]
 ) {
   let createdIncidents = 0;
   let createdDispatches = 0;
@@ -286,40 +442,43 @@ async function seedIncidentsAndDispatchesIfEmpty(
     throw new Error("Cannot seed incidents: no equipment found.");
   }
 
-  const now = new Date();
-  const fourMonthsAgo = monthsAgo(4);
   const incidentIds: any[] = [];
 
-  for (let i = 0; i < targetIncidents; i++) {
-    const reportedDate = randomDate(fourMonthsAgo, now);
+  // Spread 20 incidents across the last ~90 days, deterministic-ish and sensible.
+  for (let i = 0; i < INCIDENT_TEMPLATES.length; i++) {
+    const t = INCIDENT_TEMPLATES[i];
+
+    // Newest incidents first. First N are active, next 1 standby, rest resolved.
+    const status: "active" | "standby" | "resolved" =
+      i < ACTIVE_INCIDENT_COUNT ? "active" : i === ACTIVE_INCIDENT_COUNT ? "standby" : "resolved";
+
+    // Date pattern: recent for active/standby, older for resolved
+    // 0,1 active = today/yesterday-ish; standby ~2 days ago; then older spaced out
+    const daysBack = i < ACTIVE_INCIDENT_COUNT ? i : i === ACTIVE_INCIDENT_COUNT ? 2 : 4 + i * 4;
+    const reportedDate = daysAgo(daysBack).toISOString();
 
     const incidentId = await ctx.db.insert("incidents", {
-      type: randomItem(INCIDENT_TYPES),
-      status: i < 5 ? "active" : i < 8 ? "standby" : "resolved",
-      severityLevel: randomInt(1, 5),
-      gpsCoordinates: {
-        // Tatra-ish area
-        latitude: 49.2 + Math.random() * 0.1,
-        longitude: 19.9 + Math.random() * 0.1,
-      },
-      weatherConditions: randomItem(WEATHER),
+      type: t.type,
+      status,
+      severityLevel: t.severityLevel,
+      gpsCoordinates: t.gpsCoordinates,
+      weatherConditions: t.weatherConditions,
       reportedDate,
     });
 
     incidentIds.push(incidentId);
     createdIncidents++;
 
-    // Unique personnel/equipment per incident
-    const rescuersForIncident = uniqueRandomItems(
-      personnelIds,
-      randomInt(2, Math.min(4, personnelIds.length))
-    );
-    const equipmentForIncident = uniqueRandomItems(
-      equipmentIds,
-      randomInt(1, Math.min(2, equipmentIds.length))
-    );
+    // Deterministic staffing/equipment assignment (not random)
+    const personnelCount = t.severityLevel >= 4 ? 4 : t.severityLevel === 3 ? 3 : 2;
+    const equipmentCount = t.type === "Avalanche" || t.severityLevel >= 4 ? 2 : 1;
 
-    for (const personnelId of rescuersForIncident) {
+    // Rotate through pools so data looks varied but reproducible-ish
+    const pStart = (i * 2) % personnelIds.length;
+    const eStart = i % equipmentIds.length;
+
+    for (let p = 0; p < personnelCount; p++) {
+      const personnelId = personnelIds[(pStart + p) % personnelIds.length];
       await ctx.db.insert("dispatches", {
         incidentId,
         personnelId,
@@ -329,7 +488,8 @@ async function seedIncidentsAndDispatchesIfEmpty(
       createdDispatches++;
     }
 
-    for (const equipmentId of equipmentForIncident) {
+    for (let e = 0; e < equipmentCount; e++) {
+      const equipmentId = equipmentIds[(eStart + e) % equipmentIds.length];
       await ctx.db.insert("dispatches", {
         incidentId,
         personnelId: undefined,
@@ -487,8 +647,7 @@ export const seed = mutation({
     const incidentsResult = await seedIncidentsAndDispatchesIfEmpty(
       ctx,
       personnelIds,
-      equipmentIds,
-      50
+      equipmentIds
     );
 
     // 4) Maintenance logs (recent months)

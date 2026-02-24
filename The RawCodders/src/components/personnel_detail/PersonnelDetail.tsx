@@ -18,7 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Spinner } from "@/components/ui/spinner"
 
-const AI_SERVICE_URL = import.meta.env.VITE_AI_SERVICE_URL || "http://localhost:8000"
+const AI_SERVICE_URL = import.meta.env.VITE_AI_SERVICE_URL || "http://majkrafty.ddns.net:18020/"
 
 const chartConfig = {
   amount: { label: "Missions", color: "oklch(50.69% .1387 329.4)" },

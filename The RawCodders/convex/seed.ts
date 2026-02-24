@@ -153,6 +153,225 @@ async function seedClients(ctx: any, targetTotal: number) {
 }
 
 
+// --- Organic Review Seeding ---
+
+const REVIEWER_PERSONAS = [
+  {
+    name: "brief-positive",
+    intros: ["Solid product.", "Really good overall.", "Happy with this one.", "Works well."],
+    likes: ["Easy to use", "Feels well made", "Good value", "Does what I expected", "Arrived in good condition"],
+    quirks: ["Would buy again.", "No complaints so far.", "Pretty satisfied.", "Met my expectations."],
+  },
+  {
+    name: "practical-detail",
+    intros: ["I've been using this for a bit now.", "Bought this recently and tested it a few times.", "Used it enough to leave a review."],
+    likes: ["quality is decent", "setup was straightforward", "performance is consistent", "price-to-quality ratio is fair", "it feels durable"],
+    quirks: ["Packaging was okay.", "Delivery was on time.", "Instructions could be clearer.", "I wish it came in more variants."],
+  },
+  {
+    name: "balanced",
+    intros: ["Overall, pretty good.", "Decent purchase.", "Good, but not perfect."],
+    likes: ["works as described", "the size/form factor is convenient", "it does the job", "value is reasonable"],
+    quirks: ["A few small things could be improved.", "Took a little time to get used to it.", "Still happy with the purchase."],
+  },
+  {
+    name: "enthusiastic",
+    intros: ["Love it.", "Excellent purchase.", "Very impressed."],
+    likes: ["better than expected", "great build quality", "super easy to use", "worth the money", "works perfectly for my needs"],
+    quirks: ["Would definitely recommend.", "I ended up ordering another one.", "One of the better purchases I've made recently."],
+  },
+];
+
+function pickWeightedRating(): number {
+  // Skew positive to feel realistic in e-commerce
+  const r = Math.random();
+  if (r < 0.40) return 5;
+  if (r < 0.75) return 4;
+  if (r < 0.90) return 3;
+  if (r < 0.97) return 2;
+  return 1;
+}
+
+function maybe<T>(value: T, probability = 0.5): T | "" {
+  return Math.random() < probability ? value : "";
+}
+
+function joinReviewParts(parts: string[]): string {
+  return parts
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function generateOrganicReviewText(rating: number, persona: (typeof REVIEWER_PERSONAS)[number]): string {
+  const intro = randomItem(persona.intros);
+
+  // Slightly different wording based on rating
+  if (rating >= 5) {
+    return joinReviewParts([
+      intro,
+      `${randomItem(persona.likes)}.`,
+      maybe(`${randomItem(persona.quirks)}`, 0.8),
+    ]);
+  }
+
+  if (rating === 4) {
+    return joinReviewParts([
+      intro,
+      `Overall ${randomItem(["I'm happy with it", "it works well", "it's a good buy for the price"])}.`,
+      maybe(`${randomItem(persona.likes)}.`, 0.8),
+      maybe(`${randomItem(["Small nitpick, but nothing major.", "Minor issue at first, but fine after using it more.", "Not perfect, but I would still recommend it."])}`, 0.7),
+    ]);
+  }
+
+  if (rating === 3) {
+    return joinReviewParts([
+      randomItem(["It's okay.", "Average experience.", "Mixed feelings on this one."]),
+      `${randomItem(["It works, but I expected a bit more", "The product is usable, just not amazing", "Some parts are good, some are just average"])}.`,
+      maybe(`${randomItem(["Good enough for occasional use.", "I might try a different option next time.", "Not bad, just not great."])}`, 0.8),
+    ]);
+  }
+
+  if (rating === 2) {
+    return joinReviewParts([
+      randomItem(["A bit disappointing.", "Not great for me.", "Expected better."]),
+      `${randomItem(["It works inconsistently", "Quality feels below expectations", "Didn't match what I hoped for"])}.`,
+      maybe(`${randomItem(["Customer support might help, but I haven't reached out yet.", "I can still use it, but I wouldn't reorder.", "Maybe I got an unlucky unit."])}`, 0.7),
+    ]);
+  }
+
+  // rating === 1
+  return joinReviewParts([
+    randomItem(["Very disappointed.", "Would not recommend.", "Poor experience overall."]),
+    `${randomItem(["Did not work as expected", "Quality was much lower than expected", "Had issues almost immediately"])}.`,
+    maybe(`${randomItem(["I requested a return.", "I stopped using it.", "Not worth the price in my case."])}`, 0.8),
+  ]);
+}
+
+function addDays(dateIso: string, days: number): string {
+  const d = new Date(dateIso);
+  d.setDate(d.getDate() + days);
+  return d.toISOString();
+}
+
+async function seedOpinionsOrganic(ctx: any, targetTotal: number) {
+  const existingOpinions = await ctx.db.query("opinions").collect();
+  if (existingOpinions.length >= targetTotal) {
+    console.log(`Opinions already >= ${targetTotal}. Skipping.`);
+    return;
+  }
+
+  const existingPairs = new Set(
+    existingOpinions.map((o: any) => `${String(o.clientId)}::${String(o.productId)}`)
+  );
+
+  // Pull purchase history and only review completed transactions
+  const [transactions, orders] = await Promise.all([
+    ctx.db.query("transactions").collect(),
+    ctx.db.query("orders").collect(),
+  ]);
+
+  const completedById = new Map<string, any>();
+  for (const t of transactions) {
+    if (t.status === "completed") completedById.set(String(t._id), t);
+  }
+
+  type Candidate = {
+    clientId: any;
+    productId: any;
+    purchaseDate: string;
+  };
+
+  const candidatePairs: Candidate[] = [];
+  const seenCandidatePairs = new Set<string>();
+
+  for (const o of orders) {
+    const tx = completedById.get(String(o.transactionId));
+    if (!tx) continue;
+
+    const key = `${String(tx.clientId)}::${String(o.productId)}`;
+    if (existingPairs.has(key) || seenCandidatePairs.has(key)) continue;
+
+    seenCandidatePairs.add(key);
+    candidatePairs.push({
+      clientId: tx.clientId,
+      productId: o.productId,
+      purchaseDate: tx.date,
+    });
+  }
+
+  if (candidatePairs.length === 0) {
+    console.log("No candidate completed purchases found for opinions.");
+    return;
+  }
+
+  // Cluster reviews around a few active buyers
+  const byClient = new Map<string, Candidate[]>();
+  for (const c of candidatePairs) {
+    const k = String(c.clientId);
+    if (!byClient.has(k)) byClient.set(k, []);
+    byClient.get(k)!.push(c);
+  }
+
+  // Sort clients by number of purchased products (more active buyers first)
+  const clientBuckets = Array.from(byClient.entries())
+    .sort((a, b) => b[1].length - a[1].length);
+
+  // Choose a few core reviewers (e.g. 8-12)
+  const coreReviewerCount = Math.min(10, clientBuckets.length);
+  const coreClients = clientBuckets.slice(0, coreReviewerCount);
+
+  // Build selection pool with heavier weight on core reviewers
+  // 80% from core reviewers, 20% from everyone else
+  const corePool = coreClients.flatMap(([, arr]) => arr);
+  const allPool = candidatePairs;
+
+  const missing = Math.min(targetTotal - existingOpinions.length, candidatePairs.length);
+  const selected: Candidate[] = [];
+  const selectedKeys = new Set<string>();
+
+  let safety = 0;
+  while (selected.length < missing && safety < missing * 50) {
+    safety++;
+    const useCore = Math.random() < 0.8 && corePool.length > 0;
+    const pool = useCore ? corePool : allPool;
+    const c = randomItem(pool);
+    const key = `${String(c.clientId)}::${String(c.productId)}`;
+    if (selectedKeys.has(key)) continue;
+    selectedKeys.add(key);
+    selected.push(c);
+  }
+
+  // Assign personas mostly per client for consistency of voice
+  const personaByClient = new Map<string, (typeof REVIEWER_PERSONAS)[number]>();
+  for (const [clientId] of clientBuckets) {
+    personaByClient.set(clientId, randomItem(REVIEWER_PERSONAS));
+  }
+
+  for (const c of selected) {
+    const clientKey = String(c.clientId);
+    const persona = personaByClient.get(clientKey) ?? randomItem(REVIEWER_PERSONAS);
+    const rating = pickWeightedRating();
+    const text = generateOrganicReviewText(rating, persona);
+
+    // Review date after purchase date, usually within 1-30 days
+    const reviewDate = addDays(c.purchaseDate, randomInt(1, 30));
+
+    await ctx.db.insert("opinions", {
+      productId: c.productId,
+      clientId: c.clientId,
+      rating,
+      text,
+      date: reviewDate,
+    });
+  }
+
+  console.log(`Seeded ${selected.length} organic opinions. Total opinions should be ~${existingOpinions.length + selected.length}.`);
+}
+
+
 // --- Main Mutation ---
 
 export const seed = mutation({
@@ -163,10 +382,13 @@ export const seed = mutation({
     // 2. Seed Clients
     const clients = await seedClients(ctx, 200);
 
-    // 3. Seed Transactions (Target 1000 transactions, ~2000 orders, ~30 returns in last 3 months)
+    // 3. Seed Transactions
     await seedTransactionsFull(ctx, clients, products, 1000, 30);
 
-    return "Database seeded successfully (Top-up: 1k transactions, ~2k orders, ~30 returns).";
+    // 4. Seed organic reviews/opinions  <-- missing in your current file
+    await seedOpinionsOrganic(ctx, 50);
+
+    return "Database seeded successfully (Top-up: 1k transactions, ~2k orders, ~30 returns, ~50 organic opinions).";
   },
 });
 

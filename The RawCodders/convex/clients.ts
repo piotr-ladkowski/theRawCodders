@@ -8,19 +8,14 @@ export const listClients = query({
     },
     handler: async (ctx, args) => {
         let clients = await ctx.db.query("clients").collect();
-        const clientCount = clients.length;
 
         const offset = args.offset ?? 0;
+        const limit = args.limit ?? 50;
         if (args.limit !== undefined) {
-            clients = clients.slice(offset, offset + args.limit);
-        } else {
-            clients = clients.slice(offset);
+            return clients.slice(offset, offset + args.limit);
         }
         
-        return {
-            clients: clients,
-            count: clientCount
-        };
+        return clients.slice(offset);
     },
 });
 

@@ -103,6 +103,72 @@ async def generate_insights(data: dict) -> AnalysisResult:
         raise e
     
 
+async def generate_dispatch_recommendation(data: dict) -> dict:
+    logger.info(f"[dispatch-rec] START - incident_type={data.get('incident_type')}, severity={data.get('severity_level')}")
+    logger.info(f"[dispatch-rec] Input data keys: {list(data.keys())}")
+    logger.info(f"[dispatch-rec] Available personnel count: {len(data.get('available_personnel', []))}")
+    logger.info(f"[dispatch-rec] Available equipment count: {len(data.get('available_equipment', []))}")
+    logger.info(f"[dispatch-rec] GPS coordinates: {data.get('gps_coordinates')}")
+
+    personnel_list = "\n".join(
+        f"- {p.get('name')} | Role: {p.get('role')} | Certifications: {', '.join(p.get('certifications', []))}"
+        for p in data.get("available_personnel", [])
+    )
+    equipment_list = "\n".join(
+        f"- {e.get('name')} | Category: {e.get('category', 'N/A')}"
+        for e in data.get("available_equipment", [])
+    )
+
+    logger.info(f"[dispatch-rec] Personnel list for prompt:\n{personnel_list or 'None'}")
+    logger.info(f"[dispatch-rec] Equipment list for prompt:\n{equipment_list or 'None'}")
+
+    prompt = f"""
+    You are an expert AI Tactical Advisor for a Mountain Rescue Command Center.
+    A new incident requires immediate dispatch. Recommend the best available personnel and equipment.
+
+    Incident Details:
+    - Type: {data['incident_type']}
+    - Severity Level: {data['severity_level']} (1=minor, 5=critical)
+    - GPS: Lat {data['gps_coordinates'].get('latitude')}, Lng {data['gps_coordinates'].get('longitude')}
+    - Weather: {data.get('weather_conditions', 'Unknown')}
+
+    Available Personnel:
+    {personnel_list or "None available"}
+
+    Available Equipment:
+    {equipment_list or "None available"}
+
+    Instructions:
+    - 'recommended_personnel': List the EXACT names of personnel to deploy (pick the most suitable based on role and certifications for this incident type). Pick 1-3 people.
+    - 'recommended_equipment': List the EXACT names of equipment to deploy (pick the most suitable for this incident type). Pick 1-4 items.
+    - 'rationale': A 1-2 sentence explanation of why these resources are the best fit.
+
+    Return ONLY a valid JSON object with these three keys.
+    """
+
+    logger.info("[dispatch-rec] Calling OpenAI GPT-4o...")
+
+    try:
+        response = await client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "system", "content": prompt}],
+            response_format={"type": "json_object"},
+            temperature=0.3
+        )
+        raw_content = response.choices[0].message.content
+        logger.info(f"[dispatch-rec] OpenAI raw response: {raw_content}")
+        result = json.loads(raw_content)
+        logger.info(f"[dispatch-rec] Parsed result: {result}")
+        return result
+    except json.JSONDecodeError as e:
+        logger.error(f"[dispatch-rec] JSON parse error: {e}")
+        logger.error(f"[dispatch-rec] Raw content was: {raw_content}")
+        raise e
+    except Exception as e:
+        logger.error(f"[dispatch-rec] Failed to generate dispatch recommendation: {type(e).__name__}: {e}")
+        raise e
+
+
 async def generate_personnel_summary(personnel_data: dict) -> str:
     logger.info(f"Generating tactical summary for personnel: {personnel_data.get('name')}")
     

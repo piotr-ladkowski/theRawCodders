@@ -1,13 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { IconAlertTriangle, IconActivity } from "@tabler/icons-react";
+import { IconAlertTriangle, IconActivity, IconBrain, IconLoader2 } from "@tabler/icons-react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { Id } from "../../convex/_generated/dataModel";
+
+const AI_SERVICE_URL = import.meta.env.VITE_AI_SERVICE_URL || "http://localhost:8000";
+
+interface DispatchRecommendation {
+  recommended_personnel: string[];
+  recommended_equipment: string[];
+  rationale: string;
+}
 
 export function GlobalEmergencyAlert() {
   const incidentsRes = useQuery(api.incidents.listIncidents, { offset: 0, limit: 100 });
@@ -23,18 +31,100 @@ export function GlobalEmergencyAlert() {
   const [selectedPersonnel, setSelectedPersonnel] = useState<string | undefined>();
   const [selectedEquipment, setSelectedEquipment] = useState<string | undefined>();
 
+  const [recommendation, setRecommendation] = useState<DispatchRecommendation | null>(null);
+  const [recommendationLoading, setRecommendationLoading] = useState(false);
+  const [recommendationError, setRecommendationError] = useState<string | null>(null);
+
   // Safely extract data arrays
   const incidents = Array.isArray(incidentsRes) ? incidentsRes : incidentsRes?.data;
   const personnel = Array.isArray(personnelRes) ? personnelRes : personnelRes?.data;
   const equipment = Array.isArray(equipmentRes) ? equipmentRes : equipmentRes?.data;
 
-  if (!incidents) return null;
-
   // Find the first "standby" incident that hasn't been locally dismissed by the user
-  const activeAlert = incidents.find((i: any) => i.status === "standby" && !dismissed.has(i._id));
+  const activeAlert = incidents?.find((i: any) => i.status === "standby" && !dismissed.has(i._id));
 
-  // If there are no standby incidents, don't render anything
-  if (!activeAlert) return null;
+  const availablePersonnel = personnel?.filter((p: any) => p.isAvailable) ?? [];
+  const availableEquipment = equipment?.filter((eq: any) => eq.status === "Available") ?? [];
+
+  const fetchRecommendation = useCallback(async () => {
+    console.log("[QuickDispatch] fetchRecommendation called", {
+      hasActiveAlert: !!activeAlert,
+      activeAlertId: activeAlert?._id,
+      activeAlertType: activeAlert?.type,
+      availablePersonnelCount: availablePersonnel.length,
+      availableEquipmentCount: availableEquipment.length,
+    });
+
+    if (!activeAlert || (availablePersonnel.length === 0 && availableEquipment.length === 0)) {
+      console.warn("[QuickDispatch] Skipping fetch: no alert or no available resources");
+      return;
+    }
+
+    setRecommendationLoading(true);
+    setRecommendationError(null);
+    setRecommendation(null);
+
+    const requestBody = {
+      incident_type: activeAlert.type,
+      severity_level: activeAlert.severityLevel,
+      gps_coordinates: {
+        latitude: activeAlert.gpsCoordinates.latitude,
+        longitude: activeAlert.gpsCoordinates.longitude,
+      },
+      weather_conditions: activeAlert.weatherConditions ?? null,
+      available_personnel: availablePersonnel.map((p: any) => ({
+        name: p.name,
+        role: p.role,
+        certifications: p.certifications ?? [],
+      })),
+      available_equipment: availableEquipment.map((eq: any) => ({
+        name: eq.name,
+        category: eq.category ?? "",
+      })),
+    };
+
+    console.log("[QuickDispatch] POST /dispatch-recommendation", {
+      url: `${AI_SERVICE_URL}/dispatch-recommendation`,
+      body: requestBody,
+    });
+
+    try {
+      const res = await fetch(`${AI_SERVICE_URL}/dispatch-recommendation`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log("[QuickDispatch] Response status:", res.status, res.statusText);
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("[QuickDispatch] Error response body:", errorText);
+        throw new Error(`AI service returned ${res.status}: ${errorText}`);
+      }
+
+      const data: DispatchRecommendation = await res.json();
+      console.log("[QuickDispatch] Recommendation received:", data);
+      setRecommendation(data);
+    } catch (err) {
+      console.error("[QuickDispatch] Dispatch recommendation failed:", err);
+      setRecommendationError("Could not load AI recommendation.");
+    } finally {
+      setRecommendationLoading(false);
+    }
+  }, [activeAlert?._id, availablePersonnel.length, availableEquipment.length]);
+
+  useEffect(() => {
+    if (dispatchModalOpen) {
+      fetchRecommendation();
+    } else {
+      setRecommendation(null);
+      setRecommendationError(null);
+    }
+  }, [dispatchModalOpen]);
+
+  // Early returns AFTER all hooks
+  if (!incidents || !activeAlert) return null;
 
   const handleDismiss = () => {
     setDismissed((prev) => new Set(prev).add(activeAlert._id));
@@ -106,7 +196,7 @@ export function GlobalEmergencyAlert() {
 
       {/* 2. The Quick Dispatch Modal */}
       <Dialog open={dispatchModalOpen} onOpenChange={setDispatchModalOpen}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-md">
           <form onSubmit={handleDispatch}>
             <DialogHeader className="mb-4">
               <DialogTitle className="text-red-600 flex items-center gap-2 text-xl font-bold">
@@ -122,6 +212,49 @@ export function GlobalEmergencyAlert() {
                 </div>
               </Field>
 
+              {/* AI Recommendation Box */}
+              <div className="border rounded-lg p-3 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <IconBrain className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <span className="font-bold text-sm text-blue-700 dark:text-blue-300">AI Recommendation</span>
+                </div>
+
+                {recommendationLoading && (
+                  <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 py-2">
+                    <IconLoader2 className="h-4 w-4 animate-spin" />
+                    Analyzing incident and available resources...
+                  </div>
+                )}
+
+                {recommendationError && (
+                  <p className="text-sm text-red-500">{recommendationError}</p>
+                )}
+
+                {recommendation && (
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="font-semibold text-blue-800 dark:text-blue-200">Personnel:</span>
+                      <ul className="ml-4 list-disc text-blue-700 dark:text-blue-300">
+                        {recommendation.recommended_personnel.map((name, i) => (
+                          <li key={i}>{name}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-blue-800 dark:text-blue-200">Equipment:</span>
+                      <ul className="ml-4 list-disc text-blue-700 dark:text-blue-300">
+                        {recommendation.recommended_equipment.map((name, i) => (
+                          <li key={i}>{name}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 italic">
+                      {recommendation.rationale}
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <Field>
                 <Label htmlFor="personnelId">Deploy Personnel</Label>
                 <Select value={selectedPersonnel} onValueChange={setSelectedPersonnel}>
@@ -129,7 +262,7 @@ export function GlobalEmergencyAlert() {
                     <SelectValue placeholder="Select Available Rescuer..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {personnel?.filter((p: any) => p.isAvailable).map((p: any) => (
+                    {availablePersonnel.map((p: any) => (
                       <SelectItem key={p._id} value={p._id}>
                         {p.name} - {p.role}
                       </SelectItem>
@@ -145,7 +278,7 @@ export function GlobalEmergencyAlert() {
                     <SelectValue placeholder="Select Available Gear..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {equipment?.filter((eq: any) => eq.status === "Available").map((eq: any) => (
+                    {availableEquipment.map((eq: any) => (
                       <SelectItem key={eq._id} value={eq._id}>
                         {eq.name}
                       </SelectItem>

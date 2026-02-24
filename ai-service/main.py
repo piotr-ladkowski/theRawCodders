@@ -6,11 +6,15 @@ from typing import List, Dict, Any
 
 # Assuming you've updated models.py, pipeline.py, and report_generator.py
 # based on the previous Mountain Rescue steps.
-from models import AnalysisResult
-from pipeline import run_pipeline, generate_personnel_summary
+from models import AnalysisResult, DispatchRecommendationRequest, DispatchRecommendationResponse
+from pipeline import run_pipeline, generate_personnel_summary, generate_dispatch_recommendation
 from report_generator import generate_pdf
 
+import logging
 import traceback
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Command Center AI Service", version="1.0.0")
 
@@ -66,6 +70,21 @@ async def generate_report(data: AnalysisResult):
             headers={"Content-Disposition": "attachment; filename=Command_Insights.pdf"}
         )
     except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/dispatch-recommendation", response_model=DispatchRecommendationResponse)
+async def dispatch_recommendation(data: DispatchRecommendationRequest):
+    """Generate AI-powered personnel and equipment recommendations for an incident."""
+    logger.info(f"[/dispatch-recommendation] Received request: incident_type={data.incident_type}, severity={data.severity_level}")
+    logger.info(f"[/dispatch-recommendation] Personnel count: {len(data.available_personnel)}, Equipment count: {len(data.available_equipment)}")
+    try:
+        result = await generate_dispatch_recommendation(data.model_dump())
+        logger.info(f"[/dispatch-recommendation] Success - returning recommendation")
+        return DispatchRecommendationResponse(**result)
+    except Exception as e:
+        logger.error(f"[/dispatch-recommendation] FAILED: {type(e).__name__}: {e}")
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 

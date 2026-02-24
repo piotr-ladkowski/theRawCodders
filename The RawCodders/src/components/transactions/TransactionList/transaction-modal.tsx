@@ -117,7 +117,7 @@ export function TransactionModal() {
                     <SelectValue placeholder="Select a client..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {clients?.map((client) => (
+                    {clients?.data.map((client) => (
                       <SelectItem key={client._id} value={client._id}>
                         {client.name} 
                       </SelectItem>

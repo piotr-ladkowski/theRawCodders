@@ -242,7 +242,7 @@ const INCIDENT_TEMPLATES: Array<{
     type: "Fall / Injury",
     severityLevel: 3,
     weatherConditions: "Clear, -2C",
-    gpsCoordinates: { lat itude: 49.2199, longitude: 19.9474 },
+    gpsCoordinates: { latitude: 49.2199, longitude: 19.9474 },
     notesHint: "Shoulder dislocation after slip on snow patch.",
   },
   {
